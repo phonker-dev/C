@@ -1,0 +1,2086 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body><title>Си с нуля</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&display=swap">
+<style>
+/* Layout: sticky table of contents on the left, one reading column on the right; one column on phones.
+   Look: single dark theme by request (reading at night). Ink-blue ground, warm amber accent, low-glare text. */
+:root {
+  --bg: #12151c;
+  --panel: #181c25;
+  --panel-2: #1e2330;
+  --line: #2a3142;
+  --fg: #d5dae3;
+  --fg-strong: #eef1f6;
+  --muted: #8b93a5;
+  --accent: #f0b35a;
+  --accent-ink: #1a1408;
+  --link: #8cc7da;
+  --ok: #93cf8e;
+  --bad: #ee9282;
+  --code-bg: #0d1016;
+  --syn-kw: #d4a2ee;
+  --syn-type: #8cc7da;
+  --syn-str: #a8d28d;
+  --syn-num: #f0b35a;
+  --syn-com: #6a7389;
+  --syn-pre: #ee9282;
+
+  --f-body: "Literata", Georgia, "Times New Roman", serif;
+  --f-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  --fs: 17px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 16px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--f-body);
+  font-size: var(--fs);
+  line-height: 1.68;
+  -webkit-font-smoothing: antialiased;
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto;
+  height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg);
+}
+a { color: var(--link); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+a:hover { color: var(--fg-strong); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+::selection { background: #f0b35a44; }
+
+.shell {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 56px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 96px;
+}
+
+/* ---------- sidebar ---------- */
+.side {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  align-self: start;
+  max-height: 100vh;
+  overflow-y: auto;
+  padding-block: 8px 24px;
+  font-family: var(--f-ui);
+  font-size: 14px;
+  scrollbar-width: thin;
+}
+.toc summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  font-weight: 600; color: var(--fg-strong);
+  padding: 10px 0;
+}
+.toc summary::-webkit-details-marker { display: none; }
+.toc summary .chev { color: var(--muted); font-size: 12px; transition: transform .2s; }
+.toc[open] summary .chev { transform: rotate(180deg); }
+.progress { margin: 4px 0 16px; }
+.progress-track { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+.progress-label { color: var(--muted); font-size: 12.5px; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+.toc li a {
+  display: grid; grid-template-columns: 28px 1fr 14px; gap: 6px; align-items: baseline;
+  padding: 5px 8px; margin-inline: -8px; border-radius: 6px;
+  color: var(--muted); text-decoration: none; line-height: 1.35;
+}
+.toc li a:hover { background: var(--panel); color: var(--fg); }
+.toc li a .n { font-family: var(--f-mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.toc li a .tick { color: var(--ok); font-size: 12px; visibility: hidden; }
+.toc li.done a .tick { visibility: visible; }
+.toc li.current a { background: var(--panel-2); color: var(--fg-strong); }
+.toc li.current a .n { color: var(--accent); }
+.toc .group { margin-top: 14px; padding: 0 0 4px; font-size: 11px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+
+.reader { display: flex; gap: 8px; align-items: center; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+.reader button {
+  font: 600 13px var(--f-ui); color: var(--fg); background: var(--panel); border: 1px solid var(--line);
+  border-radius: 6px; padding: 4px 10px; cursor: pointer;
+}
+.reader button:hover { border-color: var(--muted); }
+.reader output { font-variant-numeric: tabular-nums; min-width: 3ch; text-align: center; }
+
+/* ---------- main column ---------- */
+main { min-width: 0; }
+.prose { max-width: 70ch; }
+.hero { padding-block: 8px 40px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.eyebrow { font: 500 12.5px var(--f-ui); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+h1 {
+  font-family: var(--f-ui); font-weight: 700; color: var(--fg-strong);
+  font-size: clamp(40px, 7vw, 64px); line-height: 1.02; letter-spacing: -.02em;
+  margin: 12px 0 18px; text-wrap: balance;
+}
+h1 .semi { color: var(--accent); font-family: var(--f-mono); font-weight: 600; }
+.lede { font-size: 1.12em; color: var(--fg); max-width: 60ch; margin: 0 0 22px; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 22px; font: 14px var(--f-ui); color: var(--muted); margin: 0; padding: 0; list-style: none; }
+.facts b { color: var(--fg-strong); font-weight: 600; }
+
+section.mod { padding-block: 56px 8px; border-bottom: 1px solid var(--line); }
+section.mod:last-of-type { border-bottom: 0; }
+.mod-head { display: grid; gap: 6px; margin-bottom: 18px; }
+.mod-num { font: 600 13px var(--f-mono); color: var(--accent); letter-spacing: .04em; }
+h2 {
+  font-family: var(--f-ui); font-weight: 700; color: var(--fg-strong);
+  font-size: clamp(26px, 3.6vw, 34px); line-height: 1.15; letter-spacing: -.01em;
+  margin: 0; text-wrap: balance;
+}
+.why { font-style: italic; color: var(--muted); margin: 4px 0 0; max-width: 64ch; }
+h3 {
+  font-family: var(--f-ui); font-weight: 600; color: var(--fg-strong);
+  font-size: 1.08em; margin: 34px 0 10px; text-wrap: balance;
+}
+h4 { font: 600 .82em var(--f-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 26px 0 8px; }
+p { margin: 0 0 14px; }
+ul, ol { padding-left: 1.3em; margin: 0 0 14px; }
+li { margin-bottom: 6px; }
+li::marker { color: var(--muted); }
+strong { color: var(--fg-strong); font-weight: 600; }
+code {
+  font-family: var(--f-mono); font-size: .86em;
+  background: var(--panel-2); color: var(--fg-strong);
+  padding: .08em .36em; border-radius: 4px; overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+}
+kbd { font: .82em var(--f-mono); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 .35em; background: var(--panel); }
+
+/* code blocks */
+.codebox { margin: 16px 0 18px; border: 1px solid var(--line); border-radius: 10px; background: var(--code-bg); overflow: hidden; }
+.codebar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 6px 8px 6px 14px; border-bottom: 1px solid var(--line); background: var(--panel);
+  font: 12.5px var(--f-mono); color: var(--muted);
+}
+.codebar .fname { color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.copy {
+  font: 600 12px var(--f-ui); color: var(--fg); background: transparent;
+  border: 1px solid var(--line); border-radius: 6px; padding: 3px 10px; cursor: pointer; flex: none;
+}
+.copy:hover { border-color: var(--muted); }
+.copy.ok { color: var(--ok); border-color: var(--ok); }
+pre {
+  margin: 0; padding: 14px 16px; overflow-x: auto;
+  font: 14px/1.62 var(--f-mono); color: var(--fg); tab-size: 4;
+  scrollbar-width: thin;
+}
+pre code { background: none; padding: 0; font-size: inherit; white-space: pre; color: inherit; }
+.tk-kw { color: var(--syn-kw); }
+.tk-ty { color: var(--syn-type); }
+.tk-st { color: var(--syn-str); }
+.tk-nu { color: var(--syn-num); }
+.tk-co { color: var(--syn-com); font-style: italic; }
+.tk-pp { color: var(--syn-pre); }
+.outbox { margin: -6px 0 18px; border: 1px dashed var(--line); border-radius: 10px; }
+.outbox .codebar { background: transparent; border-bottom-style: dashed; }
+.outbox pre { color: var(--muted); }
+
+/* callouts */
+.callout { margin: 18px 0; padding: 14px 18px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); }
+.callout > :last-child { margin-bottom: 0; }
+.callout .lbl { display: block; font: 600 11.5px var(--f-ui); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 6px; }
+.callout.trap { background: #2a1d1f; border-color: #4a2f31; }
+.callout.trap .lbl { color: var(--bad); }
+.callout.tip .lbl { color: var(--accent); }
+.callout.info .lbl { color: var(--link); }
+
+/* tables */
+.tblwrap { overflow-x: auto; margin: 14px 0 18px; border: 1px solid var(--line); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; font: 14.5px/1.5 var(--f-ui); }
+th, td { text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; font-size: 12.5px; letter-spacing: .05em; text-transform: uppercase; background: var(--panel); }
+tr:last-child td { border-bottom: 0; }
+td code { white-space: nowrap; }
+
+/* memory diagram */
+.mem { margin: 18px 0 22px; overflow-x: auto; }
+.mem-row { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 8px; min-width: 520px; }
+.cell { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 10px 12px; font: 13px var(--f-mono); }
+.cell .addr { color: var(--muted); font-size: 11.5px; }
+.cell .name { color: var(--fg-strong); font-family: var(--f-ui); font-weight: 600; font-size: 13px; margin-top: 2px; }
+.cell .val { color: var(--accent); font-size: 15px; margin-top: 4px; }
+.cell.hot { border-color: var(--accent); }
+.cell.ptr .val { color: var(--link); }
+.mem-cap { font: 13px var(--f-ui); color: var(--muted); margin-top: 8px; }
+
+.layout-mem { display: grid; gap: 6px; margin: 18px 0; font: 13.5px var(--f-ui); max-width: 520px; }
+.layout-mem div { display: grid; grid-template-columns: 120px 1fr; gap: 12px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+.layout-mem b { color: var(--fg-strong); font-weight: 600; }
+.layout-mem span { color: var(--muted); }
+.layout-mem .gap { background: transparent; border-style: dashed; text-align: center; display: block; color: var(--muted); }
+
+/* tasks */
+.tasks { list-style: none; padding: 0; counter-reset: t; display: grid; gap: 10px; }
+.tasks li { counter-increment: t; display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 8px; margin: 0; }
+.tasks li::before { content: counter(t) "."; font: 600 14px var(--f-mono); color: var(--muted); padding-top: 3px; }
+.lvl { display: inline-block; font: 600 11px var(--f-ui); letter-spacing: .06em; text-transform: uppercase; padding: 1px 7px; border-radius: 99px; margin-right: 8px; vertical-align: 2px; border: 1px solid; }
+.lvl.l1 { color: var(--ok); border-color: #3e5a3c; }
+.lvl.l2 { color: var(--accent); border-color: #5c4628; }
+.lvl.l3 { color: var(--bad); border-color: #5b3632; }
+
+.donebox {
+  display: inline-flex; align-items: center; gap: 10px; margin-top: 22px;
+  font: 600 14px var(--f-ui); color: var(--fg); cursor: pointer;
+  padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel);
+}
+.donebox input { width: 17px; height: 17px; accent-color: var(--accent); margin: 0; cursor: pointer; }
+.donebox:has(input:checked) { border-color: #3e5a3c; color: var(--ok); }
+
+/* resource lists */
+.res { list-style: none; padding: 0; display: grid; gap: 14px; }
+.res li { margin: 0; padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+.res .t { font: 600 15.5px var(--f-ui); color: var(--fg-strong); display: block; }
+.res .t a { color: var(--fg-strong); }
+.res .t a:hover { color: var(--accent); }
+.res .meta { display: block; font: 12.5px var(--f-ui); color: var(--muted); margin: 2px 0 6px; letter-spacing: .02em; }
+.res p { margin: 0; font-size: .95em; }
+
+.weeks td:first-child { font-family: var(--f-mono); color: var(--accent); white-space: nowrap; }
+
+footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--line); font: 13px var(--f-ui); color: var(--muted); }
+
+@media (max-width: 920px) {
+  .shell { grid-template-columns: minmax(0, 1fr); gap: 0; padding-block: 20px 72px; }
+  .side { position: static; max-height: none; overflow: visible; border-bottom: 1px solid var(--line); margin-bottom: 20px; padding-block: 0 8px; }
+  .hero { padding-top: 8px; }
+}
+@page { size: A5; margin: 0; }
+@media print {
+  html, body { background: var(--bg); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  :root { --fs: 14.5px; }
+  .side, .copy, .donebox, .reader { display: none !important; }
+  .shell { display: block; max-width: none; padding: 0 14mm; }
+  .hero { padding-top: 12mm; }
+  section.mod { padding-block: 22px 4px; }
+  pre { font-size: 11px; white-space: pre-wrap; overflow-wrap: anywhere; overflow: visible; }
+  pre code { white-space: pre-wrap; }
+  .tblwrap, .mem { overflow: visible; }
+  table { font-size: 12px; }
+  th, td { padding: 6px 8px; }
+  .mem-row { min-width: 0; grid-template-columns: repeat(2, 1fr); }
+  .outbox, .callout, .res li, .cell, tr { break-inside: avoid; }
+  h2, h3, h4, .mod-head, .codebar { break-after: avoid; }
+  footer { padding-bottom: 12mm; }
+}
+@media (max-width: 480px) {
+  :root { --fs: 16px; }
+  pre { font-size: 13px; padding: 12px; }
+  th, td { padding: 8px 10px; }
+}
+</style>
+
+<div class="shell">
+  <aside class="side">
+    <details class="toc" id="toc">
+      <summary><span>Содержание</span><span class="chev" aria-hidden="true">▼</span></summary>
+      <div class="progress" aria-live="polite">
+        <div class="progress-track"><div class="progress-fill" id="pfill"></div></div>
+        <div class="progress-label" id="plabel">Пройдено 0 из 19 модулей</div>
+      </div>
+      <ol id="toclist">
+        <li class="group">Старт</li>
+        <li><a href="#m0"><span class="n">00</span><span>Как учиться по курсу</span><span class="tick">✓</span></a></li>
+        <li><a href="#m1"><span class="n">01</span><span>Окружение и VS Code</span><span class="tick">✓</span></a></li>
+        <li><a href="#m2"><span class="n">02</span><span>Первая программа</span><span class="tick">✓</span></a></li>
+        <li class="group">Основы языка</li>
+        <li><a href="#m3"><span class="n">03</span><span>Типы и printf</span><span class="tick">✓</span></a></li>
+        <li><a href="#m4"><span class="n">04</span><span>Операторы</span><span class="tick">✓</span></a></li>
+        <li><a href="#m5"><span class="n">05</span><span>Ветвления и циклы</span><span class="tick">✓</span></a></li>
+        <li><a href="#m6"><span class="n">06</span><span>Функции</span><span class="tick">✓</span></a></li>
+        <li><a href="#m7"><span class="n">07</span><span>Массивы</span><span class="tick">✓</span></a></li>
+        <li class="group">Память</li>
+        <li><a href="#m8"><span class="n">08</span><span>Указатели</span><span class="tick">✓</span></a></li>
+        <li><a href="#m9"><span class="n">09</span><span>Строки</span><span class="tick">✓</span></a></li>
+        <li><a href="#m10"><span class="n">10</span><span>Динамическая память</span><span class="tick">✓</span></a></li>
+        <li><a href="#m11"><span class="n">11</span><span>Структуры, enum, union</span><span class="tick">✓</span></a></li>
+        <li class="group">Настоящие программы</li>
+        <li><a href="#m12"><span class="n">12</span><span>Несколько файлов и make</span><span class="tick">✓</span></a></li>
+        <li><a href="#m13"><span class="n">13</span><span>Файлы и аргументы</span><span class="tick">✓</span></a></li>
+        <li><a href="#m14"><span class="n">14</span><span>Битовые операции</span><span class="tick">✓</span></a></li>
+        <li><a href="#m15"><span class="n">15</span><span>Препроцессор</span><span class="tick">✓</span></a></li>
+        <li><a href="#m16"><span class="n">16</span><span>void* и указатели на функции</span><span class="tick">✓</span></a></li>
+        <li><a href="#m17"><span class="n">17</span><span>UB и отладка</span><span class="tick">✓</span></a></li>
+        <li><a href="#m18"><span class="n">18</span><span>Финальные проекты</span><span class="tick">✓</span></a></li>
+        <li class="group">Дальше</li>
+        <li><a href="#res"><span class="n">→</span><span>Видео, курсы, книги</span><span class="tick"></span></a></li>
+        <li><a href="#plan"><span class="n">→</span><span>План на 8 недель</span><span class="tick"></span></a></li>
+      </ol>
+      <div class="reader">
+        <span>Шрифт</span>
+        <button type="button" id="fs-dn" aria-label="Уменьшить шрифт">A−</button>
+        <output id="fs-val">17</output>
+        <button type="button" id="fs-up" aria-label="Увеличить шрифт">A+</button>
+      </div>
+    </details>
+  </aside>
+
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Курс по основам языка C</div>
+      <h1>Си с нуля<span class="semi">;</span></h1>
+      <p class="lede">База языка C для будущей работы с железом, системами и памятью: от установки компилятора до указателей, динамической памяти и первых настоящих проектов. Каждый пример кода здесь скомпилирован и проверен с включёнными предупреждениями и санитайзерами.</p>
+      <ul class="facts">
+        <li><b>19</b> модулей</li>
+        <li><b>~8</b> недель по 1–2 часа в день</li>
+        <li><b>70+</b> упражнений</li>
+        <li>Все материалы <b>бесплатные</b></li>
+      </ul>
+    </header>
+
+<!-- ============ 00 ============ -->
+<section class="mod" id="m0">
+  <div class="mod-head">
+    <div class="mod-num">МОДУЛЬ 00</div>
+    <h2>Как учиться по этому курсу</h2>
+    <p class="why">Метод важнее материала: один и тот же текст одному даёт навык, а другому только ощущение, что он «всё понял».</p>
+  </div>
+  <div class="prose">
+    <p>C не учится чтением. Он учится руками: ты пишешь код, компилятор ругается, ты разбираешься почему. Поэтому каждый модуль устроен одинаково: короткая теория, пример, ловушки и упражнения. Упражнения обязательны, без них модуль не засчитывается.</p>
+    <h3>Пять правил</h3>
+    <ol>
+      <li><strong>Перепечатывай примеры руками, не копируй.</strong> Кнопка «Копировать» нужна для потом, когда ты уже понял код. Руки запоминают синтаксис быстрее глаз.</li>
+      <li><strong>Ломай примеры нарочно.</strong> Убери <code>;</code>, поменяй тип, выйди за границу массива. Прочитай, что сказал компилятор. Ошибки компилятора станут понятными только так.</li>
+      <li><strong>Предсказывай вывод до запуска.</strong> Перед каждым запуском скажи вслух, что программа напечатает. Если ошибся, найди, где именно твоя модель разошлась с реальностью.</li>
+      <li><strong>Код каждый день.</strong> 40 минут ежедневно дают больше, чем 5 часов в выходной.</li>
+      <li><strong>Пропорция 20/80.</strong> Видео и чтение занимают 20% времени, а 80% уходит на написание кода. Видео дают картину, навык дают задачи.</li>
+    </ol>
+    <div class="callout tip">
+      <span class="lbl">Прогресс сохраняется</span>
+      <p>Внизу каждого модуля есть отметка «Модуль пройден». Ставь её, только когда сделал все упражнения уровня «база». Отметки хранятся в этом браузере, а шкала прогресса в оглавлении слева.</p>
+    </div>
+    <p>Уровни упражнений: <span class="lvl l1">база</span> делать обязательно, <span class="lvl l2">средне</span> очень желательно, <span class="lvl l3">сложно</span> для тех, кто хочет глубже.</p>
+    <label class="donebox"><input type="checkbox" data-done="m0" id="done-m0"> Модуль пройден</label>
+  </div>
+</section>
+
+<!-- ============ 01 ============ -->
+<section class="mod" id="m1">
+  <div class="mod-head">
+    <div class="mod-num">МОДУЛЬ 01</div>
+    <h2>Окружение: VS Code и компилятор</h2>
+    <p class="why">Ответ на вопрос «почему не просто VS Code» и рабочая настройка для Windows, macOS и Linux.</p>
+  </div>
+  <div class="prose">
+    <h3>VS Code использовать можно и нужно</h3>
+    <p>Путаница возникает из-за того, что VS Code — это <strong>редактор</strong>, а не компилятор. Это очень удобный блокнот с подсветкой, подсказками и отладчиком. Превращать файл <code>.c</code> в работающую программу он сам не умеет. Для этого нужен <strong>компилятор</strong> (<code>gcc</code> или <code>clang</code>), а он живёт в операционной системе.</p>
+    <p>Поэтому правильный вопрос звучит так: «где взять компилятор и инструменты к нему». Связка такая: <strong>VS Code для написания кода, gcc для сборки, терминал для запуска</strong>.</p>
+
+    <h3>Почему я советую Linux-окружение (на Windows через WSL)</h3>
+    <ul>
+      <li><strong>Инструменты.</strong> Отладчик <code>gdb</code> и проверка памяти <code>valgrind</code> работают в Linux. Санитайзеры (AddressSanitizer) под Windows с MinGW поддерживаются плохо. Именно эти инструменты ловят 90% ошибок новичка в C.</li>
+      <li><strong>Профессия.</strong> Embedded, ядро Linux, драйверы и серверный софт строятся на Linux-инструментах. Привыкать к терминалу лучше с первого дня.</li>
+      <li><strong>Материалы.</strong> Почти все курсы, книги и задачники по C рассчитаны на gcc и Linux.</li>
+    </ul>
+    <p><strong>WSL</strong> (Windows Subsystem for Linux) — это настоящая Ubuntu внутри Windows без виртуальной машины и двойной загрузки. VS Code умеет работать с ней напрямую: окно открывается в Windows, а компиляция идёт в Linux.</p>
+
+    <h3>Установка: Windows (рекомендуемый путь)</h3>
+    <p>1. Открой PowerShell <strong>от имени администратора</strong> и выполни команду ниже, затем перезагрузи компьютер. После перезагрузки откроется Ubuntu и попросит придумать имя пользователя и пароль.</p>
+    <div class="codebox"><pre data-lang="sh" data-name="PowerShell (администратор)"><code>wsl --install</code></pre></div>
+    <p>2. В терминале Ubuntu установи компилятор и инструменты:</p>
+    <div class="codebox"><pre data-lang="sh" data-name="Ubuntu"><code>sudo apt update
+sudo apt install build-essential gdb valgrind
+gcc --version        # проверка: должна напечататься версия</code></pre></div>
+    <p>3. Установи <strong>VS Code для Windows</strong> (не внутрь Ubuntu). В разделе расширений (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd>) поставь <strong>WSL</strong> и <strong>C/C++</strong> от Microsoft.</p>
+    <p>4. Создай папку курса и открой её в VS Code прямо из Ubuntu:</p>
+    <div class="codebox"><pre data-lang="sh" data-name="Ubuntu"><code>mkdir -p ~/c-course &amp;&amp; cd ~/c-course
+code .               # VS Code откроется в режиме «WSL: Ubuntu»</code></pre></div>
+    <p>Внизу слева в VS Code появится зелёная плашка <strong>WSL: Ubuntu</strong>. Если расширение C/C++ предложит «Install in WSL», соглашайся.</p>
+    <div class="callout info">
+      <span class="lbl">Без WSL</span>
+      <p>Можно поставить <strong>MSYS2</strong> и в нём выполнить <code>pacman -S mingw-w64-ucrt-x86_64-gcc</code>. Компилировать это позволит, но valgrind не будет, а санитайзеры будут работать с ограничениями. Для учёбы WSL удобнее.</p>
+    </div>
+
+    <h3>Установка: macOS</h3>
+    <div class="codebox"><pre data-lang="sh" data-name="Terminal"><code>xcode-select --install   # ставит clang, make, lldb
+clang --version</code></pre></div>
+    <p>На Mac команда <code>gcc</code> на самом деле запускает <code>clang</code>, и для курса это нормально. Все флаги ниже работают. Valgrind на Apple Silicon не работает, его роль выполняют санитайзеры и утилита <code>leaks</code>. Отладчик здесь <code>lldb</code>, его команды почти совпадают с <code>gdb</code>.</p>
+
+    <h3>Установка: Linux</h3>
+    <div class="codebox"><pre data-lang="sh" data-name="Ubuntu / Debian"><code>sudo apt install build-essential gdb valgrind</code></pre></div>
+
+    <h3>Как собирать: команда, которую ты будешь писать тысячу раз</h3>
+    <div class="codebox"><pre data-lang="sh" data-name="терминал"><code>gcc -std=c17 -Wall -Wextra -Wpedantic -g -fsanitize=address,undefined main.c -o main
+./main</code></pre></div>
+    <div class="tblwrap"><table>
+      <thead><tr><th>Флаг</th><th>Что делает</th></tr></thead>
+      <tbody>
+        <tr><td><code>-std=c17</code></td><td>Стандарт языка C17: современный и поддерживается везде</td></tr>
+        <tr><td><code>-Wall -Wextra -Wpedantic</code></td><td>Включают предупреждения. Предупреждение в C почти всегда означает настоящую ошибку</td></tr>
+        <tr><td><code>-g</code></td><td>Добавляет отладочную информацию: номера строк в ошибках и работа отладчика</td></tr>
+        <tr><td><code>-fsanitize=address,undefined</code></td><td>Санитайзеры ловят выход за границы, утечки и неопределённое поведение прямо во время работы</td></tr>
+        <tr><td><code>-o main</code></td><td>Имя готовой программы (по умолчанию было бы <code>a.out</code>)</td></tr>
+      </tbody>
+    </table></div>
+    <p>Чтобы не набирать это каждый раз, добавь сокращение в конец файла <code>~/.bashrc</code> и перезапусти терминал:</p>
+    <div class="codebox"><pre data-lang="sh" data-name="~/.bashrc"><code>alias cc17='gcc -std=c17 -Wall -Wextra -Wpedantic -g -fsanitize=address,undefined'
+# использование: cc17 main.c -o main &amp;&amp; ./main</code></pre></div>
+    <div class="callout tip">
+      <span class="lbl">Совет на первые недели</span>
+      <p>Не жми кнопку «Run» в VS Code и не ставь расширение Code Runner. Собирай из терминала руками (<kbd>Ctrl</kbd>+<kbd>`</kbd> открывает терминал внутри VS Code). Так ты поймёшь, что происходит, и не растеряешься, когда кнопки не будет: на сервере, в микроконтроллере, на собеседовании.</p>
+    </div>
+    <p><strong>Ничего не установилось, а хочется начать прямо сейчас?</strong> Первый день можно провести в браузере: <a href="https://www.onlinegdb.com/" target="_blank" rel="noopener">onlinegdb.com</a> (выбери язык C) или <a href="https://godbolt.org/" target="_blank" rel="noopener">godbolt.org</a>. Но установку не откладывай.</p>
+
+    <h4>Упражнения</h4>
+    <ol class="tasks">
+      <li><div><span class="lvl l1">база</span>Установи окружение для своей ОС. Убедись, что <code>gcc --version</code> печатает версию.</div></li>
+      <li><div><span class="lvl l1">база</span>Добавь алиас <code>cc17</code> и проверь, что он работает.</div></li>
+      <li><div><span class="lvl l2">средне</span>Выучи 10 команд терминала: <code>pwd</code>, <code>ls -la</code>, <code>cd</code>, <code>mkdir</code>, <code>rm</code>, <code>cp</code>, <code>mv</code>, <code>cat</code>, <code>less</code>, <code>man</code>. Например, <code>man printf</code> открывает справку прямо в терминале.</div></li>
+    </ol>
+    <label class="donebox"><input type="checkbox" data-done="m1" id="done-m1"> Модуль пройден</label>
+  </div>
+</section>
+
+<!-- ============ 02 ============ -->
+<section class="mod" id="m2">
+  <div class="mod-head">
+    <div class="mod-num">МОДУЛЬ 02</div>
+    <h2>Первая программа и путь от текста к программе</h2>
+    <p class="why">Компиляция состоит из четырёх этапов. Знать их нужно, чтобы понимать ошибки вроде «undefined reference».</p>
+  </div>
+  <div class="prose">
+    <div class="codebox"><pre data-lang="c" data-file="hello.c"><code>#include &lt;stdio.h&gt;   // подключаем объявления функций ввода-вывода (printf)
+
+int main(void) {      // точка входа: отсюда начинается выполнение
+    printf("Привет, C!\n");   // \n означает перевод строки
+    return 0;         // 0 сообщает системе, что всё прошло успешно
+}</code></pre></div>
+    <div class="outbox" data-for="hello.c"><div class="codebar"><span class="fname">вывод</span></div><pre><code>Привет, C!</code></pre></div>
+    <div class="codebox"><pre data-lang="sh" data-name="терминал"><code>cc17 hello.c -o hello
+./hello
+echo $?      # покажет код возврата программы: 0</code></pre></div>
+
+    <h3>Что происходит при сборке</h3>
+    <p>Команда <code>gcc</code> на самом деле запускает четыре программы подряд. Каждый этап можно выполнить отдельно и посмотреть на результат:</p>
+    <div class="tblwrap"><table>
+      <thead><tr><th>Этап</th><th>Команда</th><th>Что получается</th></tr></thead>
+      <tbody>
+        <tr><td>1. Препроцессор</td><td><code>gcc -E hello.c -o hello.i</code></td><td>Текст, в который вставлено содержимое <code>stdio.h</code>. Открой файл и посмотри, сколько там строк</td></tr>
+        <tr><td>2. Компиляция</td><td><code>gcc -S hello.c -o hello.s</code></td><td>Ассемблер: команды процессора в текстовом виде</td></tr>
+        <tr><td>3. Ассемблирование</td><td><code>gcc -c hello.c -o hello.o</code></td><td>Объектный файл: машинный код, но ещё без библиотек</td></tr>
+        <tr><td>4. Линковка</td><td><code>gcc hello.o -o hello</code></td><td>Готовая программа: линкер подключил код <code>printf</code> из стандартной библиотеки</td></tr>
+      </tbody>
+    </table></div>
+    <p>Это объясняет два вида ошибок. Если компилятор пишет <code>error: expected ';'</code>, проблема на этапе компиляции, в синтаксисе. Если линкер пишет <code>undefined reference to 'foo'</code>, функция объявлена, но её код не найден: ты забыл файл <code>.c</code> или библиотеку.</p>
+
+    <h3>Анатомия программы</h3>
+    <ul>
+      <li><code>#include</code> — команда препроцессору: «вставь сюда содержимое файла». В заголовочных файлах (<code>.h</code>) лежат объявления функций.</li>
+      <li><code>int main(void)</code> — главная функция. Слово <code>int</code> означает, что она возвращает целое число, <code>void</code> — что аргументов нет.</li>
+      <li>Фигурные скобки <code>{ }</code> задают блок кода. Каждая инструкция заканчивается точкой с запятой <code>;</code>.</li>
+      <li>Комментарии бывают двух видов: <code>// до конца строки</code> и <code>/* многострочный */</code>.</li>
+    </ul>
+
+    <h4>Упражнения</h4>
+    <ol class="tasks">
+      <li><div><span class="lvl l1">база</span>Напиши программу, которая печатает твоё имя, возраст и город, каждое на новой строке.</div></li>
+      <li><div><span class="lvl l1">база</span>Убери <code>#include</code>, потом <code>;</code>, потом закрывающую <code>}</code>. Для каждого случая прочитай сообщение компилятора целиком.</div></li>
+      <li><div><span class="lvl l2">средне</span>Пройди все четыре этапа вручную. Сравни число строк в <code>hello.c</code> и <code>hello.i</code> командой <code>wc -l</code>.</div></li>
+      <li><div><span class="lvl l2">средне</span>Сделай <code>return 3;</code> и проверь <code>echo $?</code>. Подумай, зачем программе код возврата.</div></li>
+    </ol>
+    <label class="donebox"><input type="checkbox" data-done="m2" id="done-m2"> Модуль пройден</label>
+  </div>
+</section>
+
+<!-- ============ 03 ============ -->
+<section class="mod" id="m3">
+  <div class="mod-head">
+    <div class="mod-num">МОДУЛЬ 03</div>
+    <h2>Переменные, типы и printf</h2>
+    <p class="why">В C у каждой переменной есть тип, и тип определяет, сколько байт она занимает и как эти байты читать.</p>
+  </div>
+  <div class="prose">
+    <p>Переменная — это именованный кусок памяти. Тип говорит компилятору две вещи: <strong>сколько байт</strong> выделить и <strong>как интерпретировать</strong> эти байты. Один и тот же байт <code>01000001</code> — это число 65, если тип целый, и буква <code>'A'</code>, если ты печатаешь его как символ.</p>
+    <div class="codebox"><pre data-lang="c" data-file="types.c"><code>#include &lt;stdio.h&gt;
+#include &lt;stdint.h&gt;    // типы точного размера: uint8_t, int32_t...
+#include &lt;stdbool.h&gt;   // bool, true, false
+
+int main(void) {
+    int age = 25;
+    double price = 19.99;
+    char letter = 'C';
+    bool ready = true;
+    uint8_t byte = 200;            // ровно 8 бит, без знака: 0..255
+    int64_t big = 9000000000LL;    // не влезает в 32 бита
+
+    printf("age=%d price=%.2f\n", age, price);
+    printf("letter=%c code=%d\n", letter, letter);   // символ и его код
+    printf("ready=%d byte=%d\n", ready, byte);
+    printf("big=%lld\n", (long long)big);
+    printf("sizeof: int=%zu double=%zu char=%zu\n",
+           sizeof(int), sizeof(double), sizeof(char));
+    return 0;
+}</code></pre></div>
+    <div class="outbox" data-for="types.c"><div class="codebar"><span class="fname">вывод (на x86-64 и ARM64)</span></div><pre><code>age=25 price=19.99
+letter=C code=67
+ready=1 byte=200
+big=9000000000
+sizeof: int=4 double=8 char=1</code></pre></div>
+
+    <h3>Основные типы</h3>
+    <div class="tblwrap"><table>
+      <thead><tr><th>Тип</th><th>Обычный размер</th><th>Для чего</th></tr></thead>
+      <tbody>
+        <tr><td><code>char</code></td><td>1 байт</td><td>Символ или маленькое число</td></tr>
+        <tr><td><code>int</code></td><td>4 байта</td><td>Целое по умолчанию (стандарт гарантирует только «не меньше 2 байт»)</td></tr>
+        <tr><td><code>long</code>, <code>long long</code></td><td>8 / 8 байт</td><td>Большие целые (<code>long</code> на Windows занимает 4 байта)</td></tr>
+        <tr><td><code>float</code>, <code>double</code></td><td>4 / 8 байт</td><td>Дробные. По умолчанию бери <code>double</code></td></tr>
+        <tr><td><code>unsigned int</code></td><td>4 байта</td><td>Только неотрицательные, диапазон в два раза больше</td></tr>
+        <tr><td><code>size_t</code></td><td>8 байт на 64-бит</td><td>Размеры и индексы. Его возвращает <code>sizeof</code></td></tr>
+        <tr><td><code>uint8_t</code> … <code>int64_t</code></td><td>Ровно 1 … 8 байт</td><td>Работа с железом, файлами, сетью. В embedded используют только их</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Спецификаторы printf</h3>
+    <p>Строка формата в <code>printf</code> содержит «дырки», которые заполняются аргументами по порядку. Спецификатор обязан соответствовать типу, иначе программа напечатает мусор. Флаг <code>-Wall</code> такие ошибки ловит.</p>
+    <div class="tblwrap"><table>
+      <thead><tr><th>Спецификатор</th><th>Тип</th><th>Пример</th></tr></thead>
+      <tbody>
+        <tr><td><code>%d</code></td><td><code>int</code></td><td><code>printf("%d", 42)</code></td></tr>
+        <tr><td><code>%u</code></td><td><code>unsigned int</code></td><td><code>printf("%u", 42u)</code></td></tr>
+        <tr><td><code>%ld</code> / <code>%lld</code></td><td><code>long</code> / <code>long long</code></td><td><code>printf("%lld", 1LL)</code></td></tr>
+        <tr><td><code>%zu</code></td><td><code>size_t</code></td><td><code>printf("%zu", sizeof(int))</code></td></tr>
+        <tr><td><code>%f</code>, <code>%.2f</code></td><td><code>double</code></td><td><code>printf("%.2f", 3.14159)</code> → 3.14</td></tr>
+        <tr><td><code>%c</code></td><td>символ</td><td><code>printf("%c", 'A')</code></td></tr>
+        <tr><td><code>%s</code></td><td>строка</td><td><code>printf("%s", "hi")</code></td></tr>
+        <tr><td><code>%x</code>, <code>%X</code></td><td>шестнадцатеричное</td><td><code>printf("%x", 255)</code> → ff</td></tr>
+        <tr><td><code>%p</code></td><td>адрес</td><td><code>printf("%p", (void *)&amp;x)</code></td></tr>
+        <tr><td><code>%%</code></td><td>знак процента</td><td><code>printf("100%%")</code></td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Ввод: scanf</h3>
+    <div class="codebox"><pre data-lang="c" data-name="фрагмент"><code>int n;
+printf("Введи число: ");
+if (scanf("%d", &amp;n) != 1) {      // scanf возвращает число успешно прочитанных значений
+    printf("Это не число\n");
+    return 1;
+}
+printf("Квадрат: %d\n", n * n);</code></pre></div>
+    <p>Знак <code>&amp;</code> перед <code>n</code> означает «адрес переменной». Функции scanf нужно знать, <em>куда</em> записать число. Подробно это разберём в модуле про указатели, а пока просто запомни: в <code>scanf</code> перед обычной переменной ставится <code>&amp;</code>.</p>
+
+    <h3>Константы</h3>
+    <div class="codebox"><pre data-lang="c" data-name="фрагмент"><code>const double PI = 3.14159;    // изменить нельзя, компилятор не даст
+#define MAX_USERS 100         // текстовая замена препроцессором, без типа</code></pre></div>
+
+    <div class="callout trap">
+      <span class="lbl">Ловушка: переполнение</span>
+      <p>У беззнаковых типов переполнение определено: <code>uint8_t x = 255; x++;</code> даёт 0, число «заворачивается». А переполнение <strong>знакового</strong> <code>int</code> — это неопределённое поведение (UB). Компилятор вправе считать, что его не бывает, и выбросить твои проверки. Подробности в модуле 17.</p>
+    </div>
+    <div class="callout trap">
+      <span class="lbl">Ловушка: неинициализированные переменные</span>
+      <p><code>int x; printf("%d", x);</code> напечатает мусор, то есть то, что лежало в этой памяти раньше. Всегда задавай начальное значение.</p>
+    </div>
+
+    <h4>Упражнения</h4>
+    <ol class="tasks">
+      <li><div><span class="lvl l1">база</span>Программа спрашивает температуру в Цельсиях и печатает её в Фаренгейтах (<code>F = C × 9 / 5 + 32</code>) с одним знаком после запятой.</div></li>
+      <li><div><span class="lvl l1">база</span>Напечатай <code>sizeof</code> всех типов из таблицы. Сравни свои результаты с таблицей.</div></li>
+      <li><div><span class="lvl l2">средне</span>Напечатай символы с кодами от 32 до 126 в виде таблицы «код → символ». Это таблица ASCII.</div></li>
+      <li><div><span class="lvl l2">средне</span>Сделай <code>uint8_t x = 250;</code> и в цикле прибавляй 1 десять раз, печатая значение. Объясни результат.</div></li>
+      <li><div><span class="lvl l3">сложно</span>Подключи <code>&lt;limits.h&gt;</code> и <code>&lt;stdint.h&gt;</code> и напечатай <code>INT_MAX</code>, <code>INT_MIN</code>, <code>UINT32_MAX</code>, <code>INT64_MAX</code>. Объясни, почему <code>INT_MIN</code> по модулю на единицу больше <code>INT_MAX</code>.</div></li>
+    </ol>
+    <label class="donebox"><input type="checkbox" data-done="m3" id="done-m3"> Модуль пройден</label>
+  </div>
+</section>
+
+<!-- ============ 04 ============ -->
+<section class="mod" id="m4">
+  <div class="mod-head">
+    <div class="mod-num">МОДУЛЬ 04</div>
+    <h2>Операторы и выражения</h2>
+    <p class="why">Целочисленное деление, приведение типов и разница между <code>=</code> и <code>==</code> ломают больше программ новичков, чем что-либо ещё.</p>
+  </div>
+  <div class="prose">
+    <div class="codebox"><pre data-lang="c" data-file="ops.c"><code>#include &lt;stdio.h&gt;
+
+int main(void) {
+    int a = 7, b = 2;
+    printf("%d %d\n", a / b, a % b);   // 3 1: целые делятся нацело, % даёт остаток
+    printf("%.1f\n", a / 2.0);         // 3.5: если один операнд дробный, деление дробное
+    printf("%.1f\n", (double)a / b);   // 3.5: явное приведение типа
+
+    int x = 5;
+    int y = x++;    // сначала y = 5, потом x станет 6
+    int z = ++x;    // сначала x станет 7, потом z = 7
+    printf("%d %d %d\n", x, y, z);
+
+    int max = (a &gt; b) ? a : b;         // тернарный оператор: условие ? если да : если нет
+    printf("max=%d\n", max);
+
+    printf("%d %d\n", 3 &gt; 2, 3 == 4);  // сравнение даёт 1 (истина) или 0 (ложь)
+    return 0;
+}</code></pre></div>
+    <div class="outbox" data-for="ops.c"><div class="codebar"><span class="fname">вывод</span></div><pre><code>3 1
+3.5
+3.5
+7 5 7
+max=7
+1 0</code></pre></div>
+
+    <h3>Шпаргалка по операторам</h3>
+    <div class="tblwrap"><table>
+      <thead><tr><th>Группа</th><th>Операторы</th><th>Замечание</th></tr></thead>
+      <tbody>
+        <tr><td>Арифметика</td><td><code>+ - * / %</code></td><td><code>%</code> работает только для целых</td></tr>
+        <tr><td>Присваивание</td><td><code>= += -= *= /= %=</code></td><td><code>x += 3</code> означает <code>x = x + 3</code></td></tr>
+        <tr><td>Инкремент</td><td><code>++ --</code></td><td>Не используй дважды для одной переменной в одном выражении</td></tr>
+        <tr><td>Сравнение</td><td><code>== != &lt; &gt; &lt;= &gt;=</code></td><td>Результат 0 или 1</td></tr>
+        <tr><td>Логика</td><td><code>&amp;&amp; || !</code></td><td>Ленивые: <code>a &amp;&amp; b</code> не вычисляет <code>b</code>, если <code>a</code> ложно</td></tr>
+        <tr><td>Биты</td><td><code>&amp; | ^ ~ &lt;&lt; &gt;&gt;</code></td><td>Модуль 14</td></tr>
+      </tbody>
+    </table></div>
+    <p>В C нет отдельного логического типа в старом смысле: <strong>ноль — ложь, всё остальное — истина</strong>. Поэтому <code>if (n)</code> означает «если n не ноль».</p>
+    <div class="callout trap">
+      <span class="lbl">Ловушка: = вместо ==</span>
+      <p><code>if (x = 5)</code> не сравнивает, а <strong>присваивает</strong> 5 в x. Результат 5 считается истиной, и условие выполняется всегда. Флаг <code>-Wall</code> предупредит, поэтому никогда не игнорируй предупреждения.</p>
+    </div>
+    <div class="callout trap">
+      <span class="lbl">Ловушка: i = i++</span>
+      <p>Выражения вида <code>i = i++</code> или <code>a[i] = i++</code> — это неопределённое поведение: переменная меняется дважды без чёткого порядка. Пиши по одному изменению на строку.</p>
+    </div>
+    <p>Приоритеты запоминать не нужно. Если сомневаешься, ставь скобки: <code>(a &amp; mask) == 0</code>. Без скобок здесь будет ошибка, потому что <code>==</code> выполняется раньше <code>&amp;</code>.</p>
+
+    <h4>Упражнения</h4>
+    <ol class="tasks">
+      <li><div><span class="lvl l1">база</span>Введи количество секунд и выведи его в формате <code>ЧЧ:ММ:СС</code> (подсказка: <code>/</code>, <code>%</code> и <code>%02d</code>).</div></li>
+      <li><div><span class="lvl l1">база</span>Введи трёхзначное число и выведи его цифры в обратном порядке.</div></li>
+      <li><div><span class="lvl l2">средне</span>Проверь, является ли год високосным, одним выражением с <code>&amp;&amp;</code> и <code>||</code> (делится на 4 и не делится на 100, либо делится на 400).</div></li>
+      <li><div><span class="lvl l2">средне</span>Напечатай <code>-7 / 2</code> и <code>-7 % 2</code>. Узнай, в какую сторону C округляет деление отрицательных чисел.</div></li>
+    </ol>
+    <label class="donebox"><input type="checkbox" data-done="m4" id="done-m4"> Модуль пройден</label>
+  </div>
+</section>
+
+<!-- ============ 05 ============ -->
+<section class="mod" id="m5">
+  <div class="mod-head">
+    <div class="mod-num">МОДУЛЬ 05</div>
+    <h2>Ветвления и циклы</h2>
+    <p class="why">С <code>if</code>, <code>for</code> и <code>while</code> можно написать любой алгоритм. Остальное в языке — удобства.</p>
+  </div>
+  <div class="prose">
+    <div class="codebox"><pre data-lang="c" data-file="control.c"><code>#include &lt;stdio.h&gt;
+
+int main(void) {
+    // for: когда известно, сколько раз повторять
+    for (int i = 1; i &lt;= 15; i++) {
+        if (i % 15 == 0)      printf("FizzBuzz ");
+        else if (i % 3 == 0)  printf("Fizz ");
+        else if (i % 5 == 0)  printf("Buzz ");
+        else                  printf("%d ", i);
+    }
+    printf("\n");
+
+    // while: когда повторяем, пока выполняется условие
+    int n = 12345, sum = 0;
+    while (n &gt; 0) {
+        sum += n % 10;   // берём последнюю цифру
+        n /= 10;         // отрезаем её
+    }
+    printf("сумма цифр = %d\n", sum);
+
+    // switch: выбор по целому значению
+    int day = 3;
+    switch (day) {
+        case 1:  printf("понедельник\n"); break;
+        case 2:  printf("вторник\n");     break;
+        case 3:  printf("среда\n");       break;   // без break выполнение «провалится» дальше
+        default: printf("другой день\n");
+    }
+
+    // break и continue
+    for (int i = 0; i &lt; 10; i++) {
+        if (i % 2 == 0) continue;   // пропустить чётные
+        if (i &gt; 7) break;           // выйти из цикла
+        printf("%d ", i);
+    }
+    printf("\n");
+    return 0;
+}</code></pre></div>
+    <div class="outbox" data-for="control.c"><div class="codebar"><span class="fname">вывод</span></div><pre><code>1 2 Fizz 4 Buzz Fizz 7 8 Fizz Buzz 11 Fizz 13 14 FizzBuzz
+сумма цифр = 15
+среда
+1 3 5 7</code></pre></div>
+
+    <h3>Цикл do-while</h3>
+    <p>Тело выполнится хотя бы один раз, а условие проверяется в конце. Это удобно для ввода с повтором:</p>
+    <div class="codebox"><pre data-lang="c" data-name="фрагмент"><code>int age;
+do {
+    printf("Возраст (0–150): ");
+    if (scanf("%d", &amp;age) != 1) return 1;
+} while (age &lt; 0 || age &gt; 150);</code></pre></div>
+
+    <div class="callout trap">
+      <span class="lbl">Ловушка: точка с запятой после условия</span>
+      <p><code>for (int i = 0; i &lt; 10; i++);</code> — цикл с пустым телом. Блок в фигурных скобках под ним выполнится один раз. С <code>if (x);</code> та же история.</p>
+    </div>
+    <div class="callout tip">
+      <span class="lbl">Привычка</span>
+      <p>Всегда ставь фигурные скобки, даже для одной строки. Знаменитая уязвимость Apple «goto fail» (2014) появилась из-за строки, которая выглядела частью <code>if</code>, но не была ею.</p>
+    </div>
+
+    <h4>Упражнения</h4>
+    <ol class="tasks">
+      <li><div><span class="lvl l1">база</span>Напечатай таблицу умножения 10×10 с выравниванием (<code>%4d</code>).</div></li>
+      <li><div><span class="lvl l1">база</span>Программа загадывает число (пока просто константу), пользователь угадывает, а программа отвечает «больше» или «меньше».</div></li>
+      <li><div><span class="lvl l2">средне</span>Проверь, простое ли число. Достаточно проверять делители до √n, то есть пока <code>i * i &lt;= n</code>.</div></li>
+      <li><div><span class="lvl l2">средне</span>Нарисуй звёздочками пирамиду высоты n, которую ввёл пользователь.</div></li>
+      <li><div><span class="lvl l3">сложно</span>Напечатай все простые числа до 10 000 и замерь время командой <code>time ./primes</code>. Потом ускорь программу.</div></li>
+    </ol>
+    <label class="donebox"><input type="checkbox" data-done="m5" id="done-m5"> Модуль пройден</label>
+  </div>
+</section>
+
+<!-- ============ 06 ============ -->
+<section class="mod" id="m6">
+  <div class="mod-head">
+    <div class="mod-num">МОДУЛЬ 06</div>
+    <h2>Функции</h2>
+    <p class="why">Функции режут программу на понятные куски. Главное, что нужно о них знать в C: аргументы всегда передаются копией.</p>
+  </div>
+  <div class="prose">
+    <div class="codebox"><pre data-lang="c" data-file="functions.c"><code>#include &lt;stdio.h&gt;
+
+// Прототипы говорят компилятору: «такие функции есть, их код будет ниже»
+int square(int x);
+unsigned long long factorial(unsigned n);
+void try_change(int x);
+void counter(void);
+
+int main(void) {
+    printf("%d\n", square(7));
+    printf("%llu\n", factorial(10));
+
+    int v = 1;
+    try_change(v);
+    printf("v = %d\n", v);      // по-прежнему 1: функция меняла копию
+
+    counter();
+    counter();
+    counter();
+    return 0;
+}
+
+int square(int x) {
+    return x * x;
+}
+
+unsigned long long factorial(unsigned n) {
+    if (n &lt;= 1) return 1;          // база рекурсии: без неё стек переполнится
+    return n * factorial(n - 1);
+}
+
+void try_change(int x) {
+    x = 100;                       // меняется только локальная копия
+    printf("внутри функции x = %d\n", x);
+}
+
+void counter(void) {
+    static int calls = 0;          // static: переменная живёт между вызовами
+    calls++;
+    printf("вызов №%d\n", calls);
+}</code></pre></div>
+    <div class="outbox" data-for="functions.c"><div class="codebar"><span class="fname">вывод</span></div><pre><code>49
+3628800
+внутри функции x = 100
+v = 1
+вызов №1
+вызов №2
+вызов №3</code></pre></div>
+
+    <h3>Что нужно запомнить</h3>
+    <ul>
+      <li><strong>Передача по значению.</strong> Функция получает копию аргумента. Чтобы функция изменила переменную снаружи, ей передают адрес переменной (модуль 08).</li>
+      <li><strong>Прототип</strong> — объявление без тела. Без него компилятор не знает, что функция существует, если она определена ниже места вызова. В больших программах прототипы живут в <code>.h</code>-файлах.</li>
+      <li><strong><code>void</code></strong> в возвращаемом типе означает «ничего не возвращает», а в скобках <code>(void)</code> — «аргументов нет». Пустые скобки <code>()</code> в старых стандартах означают «аргументы неизвестны», поэтому пиши <code>void</code> явно.</li>
+      <li><strong>Область видимости.</strong> Переменная живёт внутри блока <code>{ }</code>, где объявлена. Локальные переменные создаются при входе в функцию и исчезают при выходе.</li>
+      <li><strong>Рекурсия</strong> работает, но каждый вызов занимает место на стеке (обычно его всего 1–8 МБ). В embedded стек бывает размером в килобайты, там глубокой рекурсии избегают.</li>
+    </ul>
+    <div class="callout trap">
+      <span class="lbl">Ловушка: функция без return</span>
+      <p>Если функция объявлена как <code>int</code>, но до <code>return</code> выполнение не дошло, результат не определён. <code>-Wall</code> предупредит: <code>control reaches end of non-void function</code>.</p>
+    </div>
+
+    <h4>Упражнения</h4>
+    <ol class="tasks">
+      <li><div><span class="lvl l1">база</span>Напиши функции <code>int max3(int a, int b, int c)</code>, <code>int is_prime(int n)</code> и <code>double average(int a, int b)</code>.</div></li>
+      <li><div><span class="lvl l1">база</span>Напиши <code>int gcd(int a, int b)</code> (алгоритм Евклида) двумя способами: циклом и рекурсией.</div></li>
+      <li><div><span class="lvl l2">средне</span>Напиши рекурсивную функцию Фибоначчи и посчитай <code>fib(45)</code>. Замерь время, объясни, почему так долго, и перепиши через цикл.</div></li>
+      <li><div><span class="lvl l3">сложно</span>Вызови функцию, которая рекурсивно вызывает себя без базы. Посмотри, что скажет санитайзер (stack-overflow), и узнай размер стека командой <code>ulimit -s</code>.</div></li>
+    </ol>
+    <label class="donebox"><input type="checkbox" data-done="m6" id="done-m6"> Модуль пройден</label>
+  </div>
+</section>
+
+<!-- ============ 07 ============ -->
+<section class="mod" id="m7">
+  <div class="mod-head">
+    <div class="mod-num">МОДУЛЬ 07</div>
+    <h2>Массивы</h2>
+    <p class="why">Массив — это несколько переменных одного типа подряд в памяти. C не проверяет, что ты остался в его границах.</p>
+  </div>
+  <div class="prose">
+    <div class="codebox"><pre data-lang="c" data-file="arrays.c"><code>#include &lt;stdio.h&gt;
+
+#define N 5
+
+// Массив в функцию передаётся как адрес первого элемента,
+// поэтому длину надо передавать отдельно
+int sum(const int *arr, size_t len) {
+    int s = 0;
+    for (size_t i = 0; i &lt; len; i++)
+        s += arr[i];
+    return s;
+}
+
+int main(void) {
+    int nums[N] = {3, 1, 4, 1, 5};
+    int zeros[10] = {0};                              // все элементы равны 0
+    size_t len = sizeof nums / sizeof nums[0];        // длина массива: 20 / 4 = 5
+
+    printf("len=%zu sum=%d\n", len, sum(nums, len));
+    printf("zeros[9]=%d\n", zeros[9]);
+
+    int grid[2][3] = { {1, 2, 3}, {4, 5, 6} };       // двумерный массив
+    for (int r = 0; r &lt; 2; r++) {
+        for (int c = 0; c &lt; 3; c++)
+            printf("%d ", grid[r][c]);
+        printf("\n");
+    }
+    return 0;
+}</code></pre></div>
+    <div class="outbox" data-for="arrays.c"><div class="codebar"><span class="fname">вывод</span></div><pre><code>len=5 sum=14
+zeros[9]=0
+1 2 3
+4 5 6</code></pre></div>
+
+    <h3>Что нужно запомнить</h3>
+    <ul>
+      <li>Индексы начинаются с <strong>0</strong>. У массива из 5 элементов последний индекс 4.</li>
+      <li>Размер массива фиксируется при создании. Растущие массивы делаются через динамическую память (модуль 10).</li>
+      <li>Трюк <code>sizeof arr / sizeof arr[0]</code> работает только там, где массив объявлен. Внутри функции <code>arr</code> уже указатель, и <code>sizeof</code> вернёт размер указателя (8), а не массива.</li>
+      <li>Массивы нельзя присваивать (<code>a = b</code>) и сравнивать (<code>a == b</code>) целиком. Копируют их циклом или функцией <code>memcpy</code>.</li>
+      <li>Двумерный массив в памяти лежит одной лентой, строка за строкой.</li>
+    </ul>
+    <div class="callout trap">
+      <span class="lbl">Главная ловушка C: выход за границу</span>
+      <p><code>nums[5] = 42;</code> скомпилируется без ошибок и запишет 42 в чужую память: в соседнюю переменную, адрес возврата или куда угодно. Программа может работать, падать или вести себя странно только по вторникам. Так устроено переполнение буфера, источник огромного числа уязвимостей. Санитайзер <code>-fsanitize=address</code> ловит такое сразу.</p>
+    </div>
+
+    <h4>Упражнения</h4>
+    <ol class="tasks">
+      <li><div><span class="lvl l1">база</span>Функции <code>min</code>, <code>max</code> и <code>average</code> для массива <code>int</code>.</div></li>
+      <li><div><span class="lvl l1">база</span>Разверни массив на месте, без второго массива.</div></li>
+      <li><div><span class="lvl l2">средне</span>Сортировка пузырьком, потом сортировка вставками. Сравни их на массиве из 10 000 случайных чисел (<code>rand()</code>).</div></li>
+      <li><div><span class="lvl l2">средне</span>Бинарный поиск в отсортированном массиве.</div></li>
+      <li><div><span class="lvl l3">сложно</span>Нарочно выйди за границу массива и запусти программу с санитайзером и без него. Прочитай отчёт ASan целиком: найди номер строки и размер массива.</div></li>
+    </ol>
+    <label class="donebox"><input type="checkbox" data-done="m7" id="done-m7"> Модуль пройден</label>
+  </div>
+</section>
+
+<!-- ============ 08 ============ -->
+<section class="mod" id="m8">
+  <div class="mod-head">
+    <div class="mod-num">МОДУЛЬ 08</div>
+    <h2>Указатели</h2>
+    <p class="why">Самый важный модуль курса. Поймёшь указатели — поймёшь C, а заодно то, как работает любой компьютер.</p>
+  </div>
+  <div class="prose">
+    <p>Память — это длинная лента байтов, и у каждого байта есть номер, то есть <strong>адрес</strong>. Переменная занимает несколько байтов подряд. <strong>Указатель</strong> — это переменная, в которой хранится адрес другой переменной.</p>
+  </div>
+  <div class="mem" role="img" aria-label="Схема памяти: x хранит 42, p хранит адрес x">
+    <div class="mem-row">
+      <div class="cell hot"><div class="addr">0x7ffc1000</div><div class="name">int x</div><div class="val">42</div></div>
+      <div class="cell"><div class="addr">0x7ffc1004</div><div class="name">int y</div><div class="val">7</div></div>
+      <div class="cell ptr"><div class="addr">0x7ffc1008</div><div class="name">int *p</div><div class="val">0x7ffc1000</div></div>
+      <div class="cell"><div class="addr">0x7ffc1010</div><div class="name">…</div><div class="val" style="color:var(--muted)">?</div></div>
+    </div>
+    <div class="mem-cap"><code>p = &amp;x</code>: в p лежит адрес x. Запись <code>*p</code> означает «пойти по адресу из p», и там лежит 42. Адреса условные.</div>
+  </div>
+  <div class="prose">
+    <div class="tblwrap"><table>
+      <thead><tr><th>Запись</th><th>Читается как</th></tr></thead>
+      <tbody>
+        <tr><td><code>int *p;</code></td><td>p — указатель на int (хранит адрес int)</td></tr>
+        <tr><td><code>&amp;x</code></td><td>адрес переменной x</td></tr>
+        <tr><td><code>*p</code></td><td>значение по адресу из p (разыменование)</td></tr>
+        <tr><td><code>p = &amp;x;</code></td><td>теперь p указывает на x</td></tr>
+        <tr><td><code>*p = 5;</code></td><td>записать 5 туда, куда указывает p, то есть в x</td></tr>
+        <tr><td><code>NULL</code></td><td>особый адрес «никуда». Разыменовывать его нельзя</td></tr>
+      </tbody>
+    </table></div>
+    <div class="codebox"><pre data-lang="c" data-file="pointers.c"><code>#include &lt;stdio.h&gt;
+
+// Чтобы функция изменила переменные снаружи, передаём их адреса
+void swap(int *a, int *b) {
+    int tmp = *a;
+    *a = *b;
+    *b = tmp;
+}
+
+int main(void) {
+    int x = 42;
+    int *p = &amp;x;
+
+    printf("x = %d, *p = %d\n", x, *p);
+    printf("p == &amp;x: %d\n", p == &amp;x);
+    *p = 100;                          // меняем x через указатель
+    printf("x = %d\n", x);
+
+    int a = 1, b = 2;
+    swap(&amp;a, &amp;b);
+    printf("a=%d b=%d\n", a, b);
+
+    // Арифметика указателей: p + 1 сдвигается на sizeof(*p) байт
+    int arr[3] = {10, 20, 30};
+    int *q = arr;                      // имя массива — это адрес arr[0]
+    printf("%d %d %d\n", *q, *(q + 1), q[2]);   // q[2] то же самое, что *(q + 2)
+    printf("шаг: %td байта\n", (char *)(q + 1) - (char *)q);
+
+    int *nothing = NULL;
+    if (nothing == NULL)
+        printf("указатель пуст, разыменовывать нельзя\n");
+    return 0;
+}</code></pre></div>
+    <div class="outbox" data-for="pointers.c"><div class="codebar"><span class="fname">вывод</span></div><pre><code>x = 42, *p = 42
+p == &amp;x: 1
+x = 100
+a=2 b=1
+10 20 30
+шаг: 4 байта
+указатель пуст, разыменовывать нельзя</code></pre></div>
+
+    <h3>Указатели и массивы</h3>
+    <p>Запись <code>arr[i]</code> — это буквально <code>*(arr + i)</code>: взять адрес начала, сдвинуться на i элементов и прочитать. Поэтому индексы начинаются с нуля: первый элемент лежит на сдвиге 0. И поэтому массив, переданный в функцию, превращается в указатель.</p>
+
+    <h3>const и указатели</h3>
+    <div class="codebox"><pre data-lang="c" data-name="фрагмент"><code>const int *p1 = &amp;x;   // нельзя менять *p1 (данные), можно менять сам p1
+int *const p2 = &amp;x;   // нельзя менять p2 (адрес), можно менять *p2
+const int *const p3 = &amp;x;   // нельзя ничего</code></pre></div>
+    <p>Правило чтения: читай объявление <strong>справа налево</strong>. <code>int *const p2</code>: «p2 — константный указатель на int». Если запутался, вставь объявление на <a href="https://cdecl.org/" target="_blank" rel="noopener">cdecl.org</a>, и он переведёт его на английский.</p>
+    <p>Привычка: если функция только читает данные по указателю, пиши <code>const</code>, как в <code>sum(const int *arr, …)</code>. Это документация и защита одновременно.</p>
+
+    <h3>Указатель на указатель</h3>
+    <div class="codebox"><pre data-lang="c" data-name="фрагмент"><code>int x = 5;
+int *p = &amp;x;
+int **pp = &amp;p;     // адрес переменной, в которой лежит адрес
+**pp = 6;          // x стал 6</code></pre></div>
+    <p>Зачем это нужно: чтобы функция могла изменить <em>сам указатель</em> снаружи, например выделить память и вернуть её через аргумент. Ещё <code>char **argv</code> в <code>main</code> — это массив строк.</p>
+
+    <div class="callout trap">
+      <span class="lbl">Ловушки</span>
+      <ul>
+        <li><strong>Неинициализированный указатель</strong> (<code>int *p; *p = 5;</code>) указывает в случайное место. Запись туда портит память или роняет программу.</li>
+        <li><strong>Разыменование NULL</strong> обычно приводит к <code>Segmentation fault</code>. Проверяй указатели, которые могут быть пустыми.</li>
+        <li><strong>Висячий указатель</strong>: адрес локальной переменной, возвращённый из функции. Функция завершилась, её стек освобождён, и указатель смотрит в мусор.</li>
+        <li>В объявлении <code>int* a, b;</code> только <code>a</code> является указателем, а <code>b</code> — обычный <code>int</code>. Поэтому звёздочку пишут у имени: <code>int *a, *b;</code>.</li>
+      </ul>
+    </div>
+
+    <h4>Упражнения</h4>
+    <ol class="tasks">
+      <li><div><span class="lvl l1">база</span>Напиши <code>void min_max(const int *arr, size_t n, int *min, int *max)</code>: одна функция возвращает два результата через указатели.</div></li>
+      <li><div><span class="lvl l1">база</span>Пройди массив циклом без индексов, только указателем: <code>for (int *p = arr; p &lt; arr + n; p++)</code>.</div></li>
+      <li><div><span class="lvl l2">средне</span>Напечатай адреса (<code>%p</code>) элементов массивов <code>char</code>, <code>int</code> и <code>double</code> и объясни, почему шаг между ними разный.</div></li>
+      <li><div><span class="lvl l2">средне</span>Напиши функцию, которая возвращает адрес локальной переменной, и посмотри предупреждение компилятора. Объясни, почему это ошибка.</div></li>
+      <li><div><span class="lvl l3">сложно</span>Напиши <code>void reverse(int *begin, int *end)</code>, которая разворачивает часть массива между двумя указателями.</div></li>
+    </ol>
+    <label class="donebox"><input type="checkbox" data-done="m8" id="done-m8"> Модуль пройден</label>
+  </div>
+</section>
+
+<!-- ============ 09 ============ -->
+<section class="mod" id="m9">
+  <div class="mod-head">
+    <div class="mod-num">МОДУЛЬ 09</div>
+    <h2>Строки</h2>
+    <p class="why">Типа «строка» в C нет. Есть массив символов, который заканчивается нулевым байтом, и твоя ответственность за его длину.</p>
+  </div>
+  <div class="prose">
+    <div class="codebox"><pre data-lang="c" data-file="strings.c"><code>#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+
+size_t my_strlen(const char *s) {
+    const char *p = s;
+    while (*p != '\0')        // идём до нулевого байта
+        p++;
+    return (size_t)(p - s);   // разница адресов равна длине
+}
+
+int main(void) {
+    char word[] = "Hello";          // 6 байт: H e l l o \0
+    const char *lit = "World";      // строковый литерал: менять его нельзя
+    printf("%zu %zu %zu\n", sizeof word, strlen(word), my_strlen(lit));
+
+    char buf[32];
+    snprintf(buf, sizeof buf, "%s, %s!", word, lit);   // безопасная склейка с лимитом
+    printf("%s\n", buf);
+
+    if (strcmp(word, "Hello") == 0)   // строки сравнивают через strcmp, а не ==
+        printf("равны\n");
+
+    for (size_t i = 0; word[i] != '\0'; i++)
+        printf("[%c:%d]", word[i], word[i]);
+    printf("\n");
+
+    printf("%zu\n", strlen("Привет"));  // 12: кириллица в UTF-8 занимает 2 байта на букву
+    return 0;
+}</code></pre></div>
+    <div class="outbox" data-for="strings.c"><div class="codebar"><span class="fname">вывод</span></div><pre><code>6 5 5
+Hello, World!
+равны
+[H:72][e:101][l:108][l:108][o:111]
+12</code></pre></div>
+
+    <h3>Ввод строки: fgets</h3>
+    <div class="codebox"><pre data-lang="c" data-name="фрагмент"><code>char line[100];
+if (fgets(line, sizeof line, stdin) != NULL) {   // читает не больше 99 символов
+    line[strcspn(line, "\n")] = '\0';            // убираем перевод строки в конце
+    printf("Ты ввёл: %s\n", line);
+}</code></pre></div>
+    <p>Функцию <code>gets</code> никогда не используй: она не знает размер буфера, поэтому её удалили из стандарта C11. С <code>scanf("%s")</code> та же проблема, если не указать ширину (<code>%99s</code>).</p>
+
+    <h3>Функции из string.h</h3>
+    <div class="tblwrap"><table>
+      <thead><tr><th>Функция</th><th>Что делает</th><th>Безопасность</th></tr></thead>
+      <tbody>
+        <tr><td><code>strlen(s)</code></td><td>Длина без <code>\0</code></td><td>Нужен <code>\0</code> в конце</td></tr>
+        <tr><td><code>strcmp(a, b)</code></td><td>0, если строки равны; меньше или больше нуля для порядка</td><td>ОК</td></tr>
+        <tr><td><code>strcpy(dst, src)</code></td><td>Копирует строку</td><td>Опасна: не знает размер <code>dst</code></td></tr>
+        <tr><td><code>strcat(dst, src)</code></td><td>Дописывает в конец</td><td>Опасна по той же причине</td></tr>
+        <tr><td><code>snprintf(dst, size, …)</code></td><td>Форматирует с лимитом</td><td>Лучший выбор для склейки</td></tr>
+        <tr><td><code>strchr</code>, <code>strstr</code></td><td>Поиск символа или подстроки</td><td>ОК</td></tr>
+        <tr><td><code>memcpy</code>, <code>memset</code>, <code>memcmp</code></td><td>Работа с байтами, а не со строками</td><td>Размер указываешь сам</td></tr>
+      </tbody>
+    </table></div>
+    <div class="callout trap">
+      <span class="lbl">Ловушки</span>
+      <ul>
+        <li><strong>Место под <code>\0</code>.</strong> Для строки из 5 символов нужен массив из 6 байт. Забудешь, и <code>strlen</code> побежит по чужой памяти.</li>
+        <li><strong>Литерал менять нельзя.</strong> <code>char *s = "hi"; s[0] = 'H';</code> обычно приводит к падению. Чтобы строку можно было менять, объявляй массив: <code>char s[] = "hi";</code>.</li>
+        <li><strong><code>==</code> сравнивает адреса</strong>, а не содержимое строк.</li>
+      </ul>
+    </div>
+
+    <h4>Упражнения</h4>
+    <ol class="tasks">
+      <li><div><span class="lvl l1">база</span>Напиши свои версии <code>my_strcpy</code>, <code>my_strcmp</code>, <code>my_strchr</code>. Сравни результаты с библиотечными на десятке примеров.</div></li>
+      <li><div><span class="lvl l1">база</span>Посчитай гласные, согласные и пробелы во введённой строке (функции из <code>&lt;ctype.h&gt;</code>: <code>isalpha</code>, <code>isspace</code>, <code>tolower</code>).</div></li>
+      <li><div><span class="lvl l2">средне</span>Проверь, является ли строка палиндромом, игнорируя пробелы и регистр (латиница).</div></li>
+      <li><div><span class="lvl l2">средне</span>Напиши <code>size_t my_strlcpy(char *dst, const char *src, size_t size)</code>: копирует не больше <code>size - 1</code> символов и всегда ставит <code>\0</code>.</div></li>
+      <li><div><span class="lvl l3">сложно</span>Разбей строку на слова без <code>strtok</code> и напечатай каждое слово на отдельной строке.</div></li>
+    </ol>
+    <label class="donebox"><input type="checkbox" data-done="m9" id="done-m9"> Модуль пройден</label>
+  </div>
+</section>
+
+<!-- ============ 10 ============ -->
+<section class="mod" id="m10">
+  <div class="mod-head">
+    <div class="mod-num">МОДУЛЬ 10</div>
+    <h2>Динамическая память</h2>
+    <p class="why">Здесь C отличается от языков со сборщиком мусора: память, которую ты взял, ты обязан вернуть сам.</p>
+  </div>
+  <div class="prose">
+    <h3>Где живут данные</h3>
+    <div class="layout-mem" role="img" aria-label="Области памяти процесса">
+      <div><b>Стек</b><span>Локальные переменные и аргументы. Выделяется и освобождается автоматически. Быстрый, но маленький (обычно до 8 МБ). Растёт вниз ↓</span></div>
+      <div class="gap">свободное пространство</div>
+      <div><b>Куча (heap)</b><span>Память по запросу: <code>malloc</code> и <code>free</code>. Большая, но управляешь ею сам. Растёт вверх ↑</span></div>
+      <div><b>Статические данные</b><span>Глобальные и <code>static</code> переменные. Живут всё время работы программы</span></div>
+      <div><b>Код</b><span>Машинные инструкции программы, только для чтения</span></div>
+    </div>
+    <h3>Четыре функции из stdlib.h</h3>
+    <div class="tblwrap"><table>
+      <thead><tr><th>Функция</th><th>Что делает</th></tr></thead>
+      <tbody>
+        <tr><td><code>malloc(size)</code></td><td>Выделяет <code>size</code> байт с мусором внутри. Возвращает адрес или <code>NULL</code></td></tr>
+        <tr><td><code>calloc(n, size)</code></td><td>Выделяет <code>n</code> элементов по <code>size</code> байт и заполняет их нулями</td></tr>
+        <tr><td><code>realloc(p, size)</code></td><td>Меняет размер блока, может переехать на новый адрес</td></tr>
+        <tr><td><code>free(p)</code></td><td>Возвращает память. После этого <code>p</code> использовать нельзя</td></tr>
+      </tbody>
+    </table></div>
+    <p>Ниже динамический массив, который растёт сам. Похожие структуры лежат внутри <code>std::vector</code> в C++ и <code>list</code> в Python. Разбери каждую строку:</p>
+    <div class="codebox"><pre data-lang="c" data-file="vec_demo.c"><code>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+typedef struct {
+    int *data;     // указатель на блок в куче
+    size_t len;    // сколько элементов сейчас
+    size_t cap;    // на сколько элементов выделено места
+} Vec;
+
+int vec_push(Vec *v, int x) {
+    if (v-&gt;len == v-&gt;cap) {
+        size_t new_cap = v-&gt;cap ? v-&gt;cap * 2 : 4;              // удваиваем ёмкость
+        int *p = realloc(v-&gt;data, new_cap * sizeof *p);
+        if (p == NULL) return -1;     // памяти нет: старый блок цел, сообщаем об ошибке
+        v-&gt;data = p;
+        v-&gt;cap = new_cap;
+    }
+    v-&gt;data[v-&gt;len++] = x;
+    return 0;
+}
+
+void vec_free(Vec *v) {
+    free(v-&gt;data);
+    v-&gt;data = NULL;               // защита от повторного использования
+    v-&gt;len = v-&gt;cap = 0;
+}
+
+int main(void) {
+    Vec v = {0};                  // все поля равны нулю, data == NULL
+    for (int i = 0; i &lt; 10; i++) {
+        if (vec_push(&amp;v, i * i) != 0) {
+            vec_free(&amp;v);
+            return 1;
+        }
+    }
+    for (size_t i = 0; i &lt; v.len; i++)
+        printf("%d ", v.data[i]);
+    printf("\nlen=%zu cap=%zu\n", v.len, v.cap);
+    vec_free(&amp;v);                 // выделил — освободи
+    return 0;
+}</code></pre></div>
+    <div class="outbox" data-for="vec_demo.c"><div class="codebar"><span class="fname">вывод</span></div><pre><code>0 1 4 9 16 25 36 49 64 81
+len=10 cap=16</code></pre></div>
+    <p>Разбор некоторых деталей:</p>
+    <ul>
+      <li><code>v-&gt;len</code> — это сокращение для <code>(*v).len</code>: поле структуры, к которой обращаемся через указатель.</li>
+      <li><code>new_cap * sizeof *p</code> — размер считается от типа указателя, а не через <code>sizeof(int)</code>. Поменяешь тип, и формула останется верной.</li>
+      <li><code>realloc(NULL, n)</code> работает как <code>malloc(n)</code>, поэтому первый вызов с пустым <code>data</code> тоже корректен.</li>
+      <li>Результат <code>realloc</code> сначала кладём во временную переменную <code>p</code>. Если написать <code>v-&gt;data = realloc(v-&gt;data, …)</code> и получить <code>NULL</code>, адрес старого блока потеряется, и будет утечка.</li>
+    </ul>
+    <div class="callout trap">
+      <span class="lbl">Пять смертных грехов</span>
+      <ul>
+        <li><strong>Утечка</strong>: забыл <code>free</code>. Программа медленно съедает память.</li>
+        <li><strong>Use-after-free</strong>: использовал память после <code>free</code>. Одна из самых опасных уязвимостей.</li>
+        <li><strong>Double free</strong>: вызвал <code>free</code> дважды для одного адреса. Ломает внутренние структуры кучи.</li>
+        <li><strong>Не проверил NULL</strong> после <code>malloc</code>.</li>
+        <li><strong>Неверный размер</strong>: <code>malloc(n)</code> вместо <code>malloc(n * sizeof(int))</code>.</li>
+      </ul>
+      <p>Все пять ловят ASan и valgrind. Запускай их всегда.</p>
+    </div>
+    <div class="callout tip">
+      <span class="lbl">Правило владения</span>
+      <p>У каждого блока памяти должен быть один понятный владелец: кто вызвал <code>malloc</code>, тот (или явно указанный код) вызывает <code>free</code>. Пиши функции парами: <code>vec_init</code> / <code>vec_free</code>, <code>list_create</code> / <code>list_destroy</code>.</p>
+    </div>
+
+    <h4>Упражнения</h4>
+    <ol class="tasks">
+      <li><div><span class="lvl l1">база</span>Спроси у пользователя n, выдели массив из n чисел через <code>malloc</code>, заполни его, посчитай сумму и освободи память.</div></li>
+      <li><div><span class="lvl l1">база</span>Напиши <code>char *my_strdup(const char *s)</code>, которая возвращает копию строки в куче.</div></li>
+      <li><div><span class="lvl l2">средне</span>Дополни <code>Vec</code> функциями <code>vec_pop</code>, <code>vec_get</code> (с проверкой границ) и <code>vec_insert(v, index, x)</code>.</div></li>
+      <li><div><span class="lvl l2">средне</span>Нарочно сделай утечку, use-after-free и double free. Посмотри, что пишет ASan в каждом случае, и запомни, как выглядят эти отчёты.</div></li>
+      <li><div><span class="lvl l3">сложно</span>Читай строки из stdin любой длины: буфер увеличивается через <code>realloc</code> по мере ввода.</div></li>
+    </ol>
+    <label class="donebox"><input type="checkbox" data-done="m10" id="done-m10"> Модуль пройден</label>
+  </div>
+</section>
+
+<!-- ============ 11 ============ -->
+<section class="mod" id="m11">
+  <div class="mod-head">
+    <div class="mod-num">МОДУЛЬ 11</div>
+    <h2>Структуры, enum и union</h2>
+    <p class="why">Структуры собирают разнородные данные в одну сущность. Из них сделаны пакеты сетевых протоколов, регистры железа и файлы.</p>
+  </div>
+  <div class="prose">
+    <div class="codebox"><pre data-lang="c" data-file="structs.c"><code>#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+#include &lt;stdint.h&gt;
+
+typedef enum { ROLE_USER, ROLE_ADMIN } Role;   // именованные целые константы: 0, 1
+
+typedef struct {
+    char name[32];
+    int age;
+    Role role;
+} User;
+
+typedef struct {
+    char a;    // 1 байт
+    int b;     // 4 байта, но должен начинаться с адреса, кратного 4
+    char c;    // 1 байт
+} Padded;      // sizeof обычно 12, а не 6: компилятор вставляет выравнивание
+
+void birthday(User *u) {
+    u-&gt;age++;                    // то же, что (*u).age++
+}
+
+int main(void) {
+    User u = { .name = "Ann", .age = 30, .role = ROLE_ADMIN };   // именованная инициализация
+    birthday(&amp;u);
+    printf("%s, %d, %s\n", u.name, u.age, u.role == ROLE_ADMIN ? "admin" : "user");
+
+    User copy = u;               // структуры копируются целиком, вместе с массивом внутри
+    strcpy(copy.name, "Bob");    // здесь безопасно: "Bob" точно влезает в 32 байта
+    printf("%s / %s\n", u.name, copy.name);
+
+    printf("sizeof(Padded) = %zu\n", sizeof(Padded));
+
+    // union: все поля лежат в одной и той же памяти
+    union {
+        uint32_t word;
+        uint8_t bytes[4];
+    } v = { .word = 0x11223344 };
+    printf("первый байт: 0x%02x\n", v.bytes[0]);   // 0x44 на x86 и ARM (little-endian)
+    return 0;
+}</code></pre></div>
+    <div class="outbox" data-for="structs.c"><div class="codebar"><span class="fname">вывод</span></div><pre><code>Ann, 31, admin
+Ann / Bob
+sizeof(Padded) = 12
+первый байт: 0x44</code></pre></div>
+
+    <h3>Что нужно запомнить</h3>
+    <ul>
+      <li><code>typedef</code> даёт типу короткое имя: <code>User</code> вместо <code>struct User</code>.</li>
+      <li>Доступ к полям: через точку у переменной (<code>u.age</code>) и через стрелку у указателя (<code>p-&gt;age</code>).</li>
+      <li><strong>Большие структуры передавай по указателю</strong> (<code>const User *u</code>), иначе каждый вызов копирует их целиком.</li>
+      <li><strong>Выравнивание (padding).</strong> Процессор быстрее читает данные с «ровных» адресов, поэтому компилятор вставляет пустые байты между полями. Если упорядочить поля от больших к маленьким, структура станет меньше. В embedded и сетевых протоколах это важно.</li>
+      <li><strong>Порядок байтов (endianness).</strong> x86 и ARM хранят младший байт первым (little-endian), а в сетевых протоколах принят обратный порядок. Пример с <code>union</code> выше показывает это наглядно.</li>
+    </ul>
+    <div class="callout info">
+      <span class="lbl">Зачем union</span>
+      <p>Так экономят память там, где в один момент нужно только одно из полей. Ещё union используют для разбора байтов, например пакета или регистра. Помни, что формально чтение не того поля, которое записывали последним, имеет нюансы в стандарте. Для переносимого кода байты достают сдвигами (модуль 14) или через <code>memcpy</code>.</p>
+    </div>
+
+    <h4>Упражнения</h4>
+    <ol class="tasks">
+      <li><div><span class="lvl l1">база</span>Структура <code>Point { double x, y; }</code> и функции <code>distance(Point a, Point b)</code> и <code>midpoint</code>.</div></li>
+      <li><div><span class="lvl l1">база</span>Массив из 5 структур <code>Student { char name[32]; int grade; }</code>. Найди лучшего студента и отсортируй массив по оценке.</div></li>
+      <li><div><span class="lvl l2">средне</span>Поиграй с порядком полей в <code>Padded</code> и добейся <code>sizeof</code> = 8. Напечатай смещения полей через <code>offsetof</code> из <code>&lt;stddef.h&gt;</code>.</div></li>
+      <li><div><span class="lvl l3">сложно</span>Опиши структурой заголовок файла BMP (первые 14 байт). Прочитай настоящий .bmp и напечатай размер файла. Учти, что из-за выравнивания структура может не совпасть с файлом, и найди, как это решается.</div></li>
+    </ol>
+    <label class="donebox"><input type="checkbox" data-done="m11" id="done-m11"> Модуль пройден</label>
+  </div>
+</section>
+
+<!-- ============ 12 ============ -->
+<section class="mod" id="m12">
+  <div class="mod-head">
+    <div class="mod-num">МОДУЛЬ 12</div>
+    <h2>Несколько файлов и make</h2>
+    <p class="why">Реальные проекты состоят из десятков файлов. Нужно понимать, как они связываются и как собирать их одной командой.</p>
+  </div>
+  <div class="prose">
+    <p>Принцип такой: <strong>объявления</strong> (что есть) кладут в <code>.h</code>, <strong>определения</strong> (как работает) — в <code>.c</code>. Каждый <code>.c</code> компилируется отдельно в <code>.o</code>, потом линкер их склеивает. Возьмём наш <code>Vec</code> и разложим его по файлам. Структура проекта:</p>
+    <div class="codebox"><pre data-lang="sh" data-name="папка vec/"><code>vec/
+├── vec.h       # интерфейс: тип и прототипы
+├── vec.c       # реализация
+├── main.c      # использование
+└── Makefile    # правила сборки</code></pre></div>
+    <div class="codebox"><pre data-lang="c" data-file="vec/vec.h" data-name="vec.h"><code>#ifndef VEC_H          // include guard: защита от двойного включения
+#define VEC_H
+
+#include &lt;stddef.h&gt;    // size_t
+
+typedef struct {
+    int *data;
+    size_t len;
+    size_t cap;
+} Vec;
+
+int  vec_push(Vec *v, int x);
+void vec_free(Vec *v);
+
+#endif</code></pre></div>
+    <div class="codebox"><pre data-lang="c" data-file="vec/vec.c" data-name="vec.c"><code>#include "vec.h"       // свои заголовки в кавычках, системные в угловых скобках
+#include &lt;stdlib.h&gt;
+
+// static на уровне файла: функция видна только внутри vec.c
+static size_t grow(size_t cap) {
+    return cap ? cap * 2 : 4;
+}
+
+int vec_push(Vec *v, int x) {
+    if (v-&gt;len == v-&gt;cap) {
+        size_t new_cap = grow(v-&gt;cap);
+        int *p = realloc(v-&gt;data, new_cap * sizeof *p);
+        if (p == NULL) return -1;
+        v-&gt;data = p;
+        v-&gt;cap = new_cap;
+    }
+    v-&gt;data[v-&gt;len++] = x;
+    return 0;
+}
+
+void vec_free(Vec *v) {
+    free(v-&gt;data);
+    v-&gt;data = NULL;
+    v-&gt;len = v-&gt;cap = 0;
+}</code></pre></div>
+    <div class="codebox"><pre data-lang="c" data-file="vec/main.c" data-name="main.c"><code>#include &lt;stdio.h&gt;
+#include "vec.h"
+
+int main(void) {
+    Vec v = {0};
+    for (int i = 1; i &lt;= 5; i++)
+        if (vec_push(&amp;v, i * 10) != 0) return 1;
+
+    for (size_t i = 0; i &lt; v.len; i++)
+        printf("%d ", v.data[i]);
+    printf("\n");
+    vec_free(&amp;v);
+    return 0;
+}</code></pre></div>
+    <p>Собрать можно одной командой: <code>gcc main.c vec.c -o app</code>. Но когда файлов 30, пересобирать все при каждом изменении долго. Для этого есть <strong>make</strong>: он пересобирает только то, что изменилось.</p>
+    <div class="codebox"><pre data-lang="make" data-file="vec/Makefile" data-name="Makefile"><code>CC      = gcc
+CFLAGS  = -std=c17 -Wall -Wextra -Wpedantic -g -fsanitize=address,undefined
+LDFLAGS = -fsanitize=address,undefined
+
+app: main.o vec.o
+	$(CC) $(LDFLAGS) main.o vec.o -o app
+
+%.o: %.c vec.h
+	$(CC) $(CFLAGS) -c $&lt; -o $@
+
+clean:
+	rm -f *.o app</code></pre></div>
+    <div class="outbox" data-for="vec/Makefile"><div class="codebar"><span class="fname">make &amp;&amp; ./app</span></div><pre><code>10 20 30 40 50</code></pre></div>
+    <div class="callout trap">
+      <span class="lbl">Ловушка: табуляция в Makefile</span>
+      <p>Строки с командами (под <code>app:</code>, <code>%.o:</code>, <code>clean:</code>) должны начинаться с <strong>символа табуляции</strong>, а не с пробелов. Иначе make напишет <code>missing separator</code>. Кнопка «Копировать» сохраняет табуляцию.</p>
+    </div>
+    <p>Как читать правило: <code>app: main.o vec.o</code> значит «чтобы получить app, нужны main.o и vec.o, а строка ниже говорит, как их склеить». <code>$&lt;</code> — первый файл из зависимостей, <code>$@</code> — цель. Команда <code>make clean</code> удаляет результаты сборки.</p>
+
+    <h3>Глобальные переменные между файлами</h3>
+    <div class="codebox"><pre data-lang="c" data-name="фрагмент"><code>// config.h
+extern int g_verbose;   // объявление: «такая переменная где-то есть»
+
+// config.c
+int g_verbose = 0;      // определение: ровно в одном .c файле</code></pre></div>
+    <p>Глобальных переменных старайся избегать. <code>static</code> у функции или глобальной переменной делает её «приватной» для файла. Это главный способ скрывать детали реализации в C.</p>
+    <p>Когда проекты вырастут, посмотри <strong>CMake</strong>. Он генерирует сборку для любой платформы, и его используют почти все крупные проекты на C и C++, включая Zephyr и SDK для микроконтроллеров.</p>
+
+    <h4>Упражнения</h4>
+    <ol class="tasks">
+      <li><div><span class="lvl l1">база</span>Собери проект выше через make. Поменяй только <code>main.c</code> и посмотри, что make пересоберёт только его.</div></li>
+      <li><div><span class="lvl l1">база</span>Убери <code>vec.o</code> из правила линковки и прочитай ошибку <code>undefined reference</code>. Объясни, на каком этапе она возникла.</div></li>
+      <li><div><span class="lvl l2">средне</span>Вынеси функции для строк из модуля 09 в библиотеку <code>mystr.h</code> / <code>mystr.c</code> и напиши файл <code>test.c</code>, который проверяет их через <code>assert</code> из <code>&lt;assert.h&gt;</code>.</div></li>
+    </ol>
+    <label class="donebox"><input type="checkbox" data-done="m12" id="done-m12"> Модуль пройден</label>
+  </div>
+</section>
+
+<!-- ============ 13 ============ -->
+<section class="mod" id="m13">
+  <div class="mod-head">
+    <div class="mod-num">МОДУЛЬ 13</div>
+    <h2>Файлы, аргументы и обработка ошибок</h2>
+    <p class="why">Программа становится полезной, когда читает файлы, принимает аргументы и честно сообщает об ошибках.</p>
+  </div>
+  <div class="prose">
+    <p>Ниже своя версия утилиты <code>wc</code>: считает строки, слова и байты в файле.</p>
+    <div class="codebox"><pre data-lang="c" data-file="mywc.c" data-args="mywc.c"><code>#include &lt;stdio.h&gt;
+#include &lt;ctype.h&gt;
+
+int main(int argc, char *argv[]) {        // argc: число аргументов, argv: массив строк
+    if (argc != 2) {
+        fprintf(stderr, "Использование: %s файл\n", argv[0]);
+        return 1;                          // ненулевой код означает ошибку
+    }
+
+    FILE *f = fopen(argv[1], "r");
+    if (f == NULL) {
+        perror(argv[1]);                   // напечатает причину, например No such file or directory
+        return 1;
+    }
+
+    long lines = 0, words = 0, bytes = 0;
+    int in_word = 0;
+    int ch;                                // int, а не char: так EOF отличается от байта 0xFF
+    while ((ch = fgetc(f)) != EOF) {
+        bytes++;
+        if (ch == '\n') lines++;
+        if (isspace(ch)) {
+            in_word = 0;
+        } else if (!in_word) {
+            in_word = 1;
+            words++;
+        }
+    }
+    fclose(f);
+
+    printf("%ld %ld %ld %s\n", lines, words, bytes, argv[1]);
+    return 0;
+}</code></pre></div>
+    <div class="codebox"><pre data-lang="sh" data-name="терминал"><code>cc17 mywc.c -o mywc
+./mywc mywc.c        # сравни с настоящим: wc mywc.c
+./mywc nope.txt      # nope.txt: No such file or directory</code></pre></div>
+
+    <h3>Работа с файлами</h3>
+    <div class="tblwrap"><table>
+      <thead><tr><th>Функция</th><th>Назначение</th></tr></thead>
+      <tbody>
+        <tr><td><code>fopen(path, mode)</code></td><td>Открыть файл. Режимы: <code>"r"</code> чтение, <code>"w"</code> запись с нуля, <code>"a"</code> дописывание, <code>"rb"</code> и <code>"wb"</code> бинарные</td></tr>
+        <tr><td><code>fclose(f)</code></td><td>Закрыть файл. Обязательно: иначе данные могут не записаться на диск</td></tr>
+        <tr><td><code>fgetc</code>, <code>fgets</code></td><td>Читать по символу или по строке</td></tr>
+        <tr><td><code>fprintf(f, …)</code></td><td>Форматированная запись, как printf, но в файл</td></tr>
+        <tr><td><code>fread</code>, <code>fwrite</code></td><td>Чтение и запись блоков байтов (бинарные данные, структуры)</td></tr>
+        <tr><td><code>fseek</code>, <code>ftell</code></td><td>Перемещение по файлу и текущая позиция</td></tr>
+      </tbody>
+    </table></div>
+    <div class="codebox"><pre data-lang="c" data-name="фрагмент: запись"><code>FILE *out = fopen("log.txt", "w");
+if (out == NULL) { perror("log.txt"); return 1; }
+fprintf(out, "result=%d\n", 42);
+fclose(out);</code></pre></div>
+
+    <h3>Три стандартных потока</h3>
+    <p>У каждой программы есть <code>stdin</code> (ввод), <code>stdout</code> (вывод) и <code>stderr</code> (ошибки). Ошибки пиши в <code>stderr</code>, тогда они не смешаются с полезным выводом. Терминал умеет перенаправлять потоки:</p>
+    <div class="codebox"><pre data-lang="sh" data-name="терминал"><code>./app &lt; input.txt &gt; output.txt   # stdin из файла, stdout в файл
+./app 2&gt; errors.log              # только ошибки в файл
+cat data.txt | ./app             # вывод одной программы на вход другой</code></pre></div>
+    <div class="callout tip">
+      <span class="lbl">Привычка</span>
+      <p>Проверяй результат каждой функции, которая может не сработать: <code>fopen</code>, <code>malloc</code>, <code>scanf</code>, <code>fread</code>. В C нет исключений: ошибка — это возвращаемое значение, и если его не проверить, программа молча продолжит работать с мусором.</p>
+    </div>
+
+    <h4>Упражнения</h4>
+    <ol class="tasks">
+      <li><div><span class="lvl l1">база</span>Напиши <code>mycat</code>: печатает содержимое всех файлов, переданных аргументами.</div></li>
+      <li><div><span class="lvl l1">база</span>Напиши <code>mycp src dst</code>: копирует файл через <code>fread</code> и <code>fwrite</code> блоками по 4096 байт.</div></li>
+      <li><div><span class="lvl l2">средне</span>Напиши <code>mygrep слово файл</code>: печатает строки, в которых есть слово, вместе с номером строки (<code>strstr</code>).</div></li>
+      <li><div><span class="lvl l3">сложно</span>Напиши <code>hexdump</code>: печатает файл по 16 байт в строке в виде hex и символов, как <code>xxd</code>. Это будет полезно для реверс-инжиниринга и embedded.</div></li>
+    </ol>
+    <label class="donebox"><input type="checkbox" data-done="m13" id="done-m13"> Модуль пройден</label>
+  </div>
+</section>
+
+<!-- ============ 14 ============ -->
+<section class="mod" id="m14">
+  <div class="mod-head">
+    <div class="mod-num">МОДУЛЬ 14</div>
+    <h2>Битовые операции</h2>
+    <p class="why">Это язык железа. Регистры микроконтроллера, флаги, протоколы и сжатие — всё это работа с отдельными битами.</p>
+  </div>
+  <div class="prose">
+    <div class="tblwrap"><table>
+      <thead><tr><th>Оператор</th><th>Имя</th><th>Пример (8 бит)</th></tr></thead>
+      <tbody>
+        <tr><td><code>&amp;</code></td><td>И</td><td><code>1100 &amp; 1010 = 1000</code></td></tr>
+        <tr><td><code>|</code></td><td>ИЛИ</td><td><code>1100 | 1010 = 1110</code></td></tr>
+        <tr><td><code>^</code></td><td>Исключающее ИЛИ</td><td><code>1100 ^ 1010 = 0110</code></td></tr>
+        <tr><td><code>~</code></td><td>НЕ (инверсия)</td><td><code>~00001111 = 11110000</code></td></tr>
+        <tr><td><code>&lt;&lt;</code></td><td>Сдвиг влево</td><td><code>0001 &lt;&lt; 3 = 1000</code> (умножение на 8)</td></tr>
+        <tr><td><code>&gt;&gt;</code></td><td>Сдвиг вправо</td><td><code>1000 &gt;&gt; 2 = 0010</code> (деление на 4)</td></tr>
+      </tbody>
+    </table></div>
+    <div class="codebox"><pre data-lang="c" data-file="bits.c"><code>#include &lt;stdio.h&gt;
+#include &lt;stdint.h&gt;
+
+#define BIT(n) (1u &lt;&lt; (n))
+
+void print_bin(uint8_t x) {
+    for (int i = 7; i &gt;= 0; i--)
+        putchar((x &amp; BIT(i)) ? '1' : '0');
+    putchar('\n');
+}
+
+int count_ones(uint32_t x) {
+    int n = 0;
+    while (x) {
+        x &amp;= x - 1;     // этот трюк гасит младшую единицу
+        n++;
+    }
+    return n;
+}
+
+int main(void) {
+    uint8_t reg = 0;
+    reg |= BIT(3);              // установить бит 3
+    reg |= BIT(0);              // установить бит 0
+    print_bin(reg);
+    reg &amp;= (uint8_t)~BIT(0);    // сбросить бит 0
+    print_bin(reg);
+    reg ^= BIT(7);              // переключить бит 7
+    print_bin(reg);
+    printf("бит 3 %s\n", (reg &amp; BIT(3)) ? "установлен" : "сброшен");
+
+    printf("0x%X = %u\n", 0xFFu, 0xFFu);
+    printf("единиц в 0xF0F0: %d\n", count_ones(0xF0F0));
+
+    uint32_t color = 0x3366CCu;                 // цвет в формате RGB
+    unsigned r = (color &gt;&gt; 16) &amp; 0xFF;          // достаём байты сдвигом и маской
+    unsigned g = (color &gt;&gt; 8) &amp; 0xFF;
+    unsigned b = color &amp; 0xFF;
+    printf("r=%u g=%u b=%u\n", r, g, b);
+    return 0;
+}</code></pre></div>
+    <div class="outbox" data-for="bits.c"><div class="codebar"><span class="fname">вывод</span></div><pre><code>00001001
+00001000
+10001000
+бит 3 установлен
+0xFF = 255
+единиц в 0xF0F0: 8
+r=51 g=102 b=204</code></pre></div>
+
+    <h3>Шестнадцатеричная система</h3>
+    <p>Одна hex-цифра — это ровно 4 бита. Поэтому байт записывается двумя hex-цифрами, и инженеры читают hex как двоичный код: <code>0xA5</code> = <code>1010 0101</code>. Таблицу ниже стоит выучить наизусть.</p>
+    <div class="tblwrap"><table>
+      <thead><tr><th>Hex</th><th>Двоичное</th><th>Hex</th><th>Двоичное</th><th>Hex</th><th>Двоичное</th><th>Hex</th><th>Двоичное</th></tr></thead>
+      <tbody style="font-family:var(--f-mono);font-variant-numeric:tabular-nums">
+        <tr><td>0</td><td>0000</td><td>4</td><td>0100</td><td>8</td><td>1000</td><td>C</td><td>1100</td></tr>
+        <tr><td>1</td><td>0001</td><td>5</td><td>0101</td><td>9</td><td>1001</td><td>D</td><td>1101</td></tr>
+        <tr><td>2</td><td>0010</td><td>6</td><td>0110</td><td>A</td><td>1010</td><td>E</td><td>1110</td></tr>
+        <tr><td>3</td><td>0011</td><td>7</td><td>0111</td><td>B</td><td>1011</td><td>F</td><td>1111</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Как это выглядит в микроконтроллере</h3>
+    <div class="codebox"><pre data-lang="c" data-name="фрагмент (embedded)"><code>// Регистр выхода порта GPIO — это просто адрес в памяти (адрес условный)
+#define GPIO_OUT (*(volatile uint32_t *)0x40020014u)
+#define LED_PIN  5
+
+GPIO_OUT |=  (1u &lt;&lt; LED_PIN);    // включить светодиод
+GPIO_OUT &amp;= ~(1u &lt;&lt; LED_PIN);    // выключить</code></pre></div>
+    <p><code>volatile</code> говорит компилятору: «значение может поменять железо, не оптимизируй чтение и запись». Без него компилятор вправе выкинуть повторяющиеся обращения к регистру.</p>
+    <div class="callout trap">
+      <span class="lbl">Ловушки</span>
+      <ul>
+        <li>Для битовых операций используй <strong>беззнаковые</strong> типы. Сдвиг отрицательного числа или сдвиг в знаковый бит может оказаться неопределённым поведением.</li>
+        <li>Сдвиг на число бит, большее или равное ширине типа (<code>1u &lt;&lt; 32</code> для 32-битного), — это UB.</li>
+        <li>Пиши <code>1u</code>, а не <code>1</code>. Литерал <code>1</code> имеет знаковый тип <code>int</code>.</li>
+      </ul>
+    </div>
+
+    <h4>Упражнения</h4>
+    <ol class="tasks">
+      <li><div><span class="lvl l1">база</span>Функции <code>set_bit</code>, <code>clear_bit</code>, <code>toggle_bit</code> и <code>test_bit</code> для <code>uint32_t</code>.</div></li>
+      <li><div><span class="lvl l1">база</span>Проверь, является ли число степенью двойки, одним выражением (подсказка: <code>x &amp; (x - 1)</code>).</div></li>
+      <li><div><span class="lvl l2">средне</span>Права доступа как в Linux: флаги <code>READ = 4</code>, <code>WRITE = 2</code>, <code>EXEC = 1</code>. Напечатай число 0755 в виде <code>rwxr-xr-x</code>.</div></li>
+      <li><div><span class="lvl l2">средне</span>Поменяй порядок байтов в <code>uint32_t</code> (0x11223344 → 0x44332211) только сдвигами и масками.</div></li>
+      <li><div><span class="lvl l3">сложно</span>Упакуй дату (день 1–31, месяц 1–12, год 0–127 от 2000) в 16 бит и распакуй обратно. Именно так хранит даты файловая система FAT.</div></li>
+    </ol>
+    <label class="donebox"><input type="checkbox" data-done="m14" id="done-m14"> Модуль пройден</label>
+  </div>
+</section>
+
+<!-- ============ 15 ============ -->
+<section class="mod" id="m15">
+  <div class="mod-head">
+    <div class="mod-num">МОДУЛЬ 15</div>
+    <h2>Препроцессор</h2>
+    <p class="why">Препроцессор работает до компилятора и умеет только заменять текст. В этом его сила и его опасность.</p>
+  </div>
+  <div class="prose">
+    <div class="codebox"><pre data-lang="c" data-file="macros.c"><code>#include &lt;stdio.h&gt;
+
+#define SQUARE_BAD(x) x * x
+#define SQUARE(x)     ((x) * (x))
+#define ARRAY_LEN(a)  (sizeof(a) / sizeof((a)[0]))
+
+#ifndef DEBUG
+#define DEBUG 1        // можно переопределить при сборке: -DDEBUG=0
+#endif
+
+int main(void) {
+    printf("%d\n", SQUARE_BAD(2 + 3));   // 11: раскрылось в 2 + 3 * 2 + 3
+    printf("%d\n", SQUARE(2 + 3));       // 25
+
+    int data[] = {1, 2, 3, 4};
+    printf("%zu\n", ARRAY_LEN(data));    // 4
+
+#if DEBUG
+    printf("[debug] файл %s, функция %s\n", __FILE__, __func__);
+#endif
+    return 0;
+}</code></pre></div>
+    <div class="outbox" data-for="macros.c"><div class="codebar"><span class="fname">вывод</span></div><pre><code>11
+25
+4
+[debug] файл macros.c, функция main</code></pre></div>
+    <h3>Что нужно запомнить</h3>
+    <ul>
+      <li><strong>В макросах бери в скобки каждый параметр и всё выражение целиком.</strong> Пример <code>SQUARE_BAD</code> показывает, что бывает без скобок.</li>
+      <li>Аргумент макроса может вычислиться дважды: <code>SQUARE(i++)</code> увеличит <code>i</code> два раза. Вместо макросов-функций лучше писать <code>static inline</code> функции: они так же быстры, но безопасны и проверяют типы.</li>
+      <li><strong>Условная компиляция</strong> (<code>#if</code>, <code>#ifdef</code>, <code>#ifndef</code>) нужна для отладочного кода, разных платформ и include guards. В embedded так включают код под конкретную плату.</li>
+      <li>Флаг <code>-D</code> задаёт макрос из командной строки: <code>gcc -DDEBUG=0 macros.c</code>.</li>
+      <li>Чтобы посмотреть, во что раскрылся макрос, запусти <code>gcc -E file.c</code>.</li>
+    </ul>
+
+    <h4>Упражнения</h4>
+    <ol class="tasks">
+      <li><div><span class="lvl l1">база</span>Напиши макросы <code>MIN(a, b)</code> и <code>MAX(a, b)</code> со всеми скобками. Найди пример, где <code>MAX(i++, j)</code> даёт неожиданный результат.</div></li>
+      <li><div><span class="lvl l2">средне</span>Сделай макрос <code>LOG(fmt, ...)</code>, который печатает файл и строку перед сообщением (подсказка: <code>__VA_ARGS__</code>), и отключи его через <code>-DNDEBUG</code>.</div></li>
+      <li><div><span class="lvl l2">средне</span>Перепиши <code>SQUARE</code> как <code>static inline</code> функцию и сравни ассемблер обоих вариантов на <a href="https://godbolt.org/" target="_blank" rel="noopener">godbolt.org</a> с флагом <code>-O2</code>.</div></li>
+    </ol>
+    <label class="donebox"><input type="checkbox" data-done="m15" id="done-m15"> Модуль пройден</label>
+  </div>
+</section>
+
+<!-- ============ 16 ============ -->
+<section class="mod" id="m16">
+  <div class="mod-head">
+    <div class="mod-num">МОДУЛЬ 16</div>
+    <h2>void* и указатели на функции</h2>
+    <p class="why">Так в C пишут обобщённый код: одна сортировка для любых данных, таблицы обработчиков, колбэки драйверов.</p>
+  </div>
+  <div class="prose">
+    <ul>
+      <li><code>void *</code> — «указатель на что угодно». Его можно присвоить в любой указатель на данные и обратно, но разыменовать нельзя: компилятор не знает размер. Так устроены <code>malloc</code>, <code>memcpy</code> и <code>qsort</code>.</li>
+      <li><strong>Указатель на функцию</strong> хранит адрес кода. Объявление <code>int (*op)(int, int)</code> читается так: «op — указатель на функцию, которая принимает два int и возвращает int».</li>
+    </ul>
+    <div class="codebox"><pre data-lang="c" data-file="funcptr.c"><code>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+// Компаратор для qsort: получает адреса двух элементов как const void*
+int cmp_int(const void *a, const void *b) {
+    int x = *(const int *)a;
+    int y = *(const int *)b;
+    return (x &gt; y) - (x &lt; y);   // -1, 0 или 1, без риска переполнения, как у x - y
+}
+
+int add(int a, int b) { return a + b; }
+int mul(int a, int b) { return a * b; }
+
+int apply(int (*op)(int, int), int a, int b) {
+    return op(a, b);            // вызываем функцию, адрес которой нам передали
+}
+
+int main(void) {
+    int nums[] = {42, 7, 19, 3, 25};
+    size_t n = sizeof nums / sizeof nums[0];
+
+    qsort(nums, n, sizeof nums[0], cmp_int);   // одна сортировка для любых типов
+    for (size_t i = 0; i &lt; n; i++)
+        printf("%d ", nums[i]);
+    printf("\n");
+
+    printf("%d %d\n", apply(add, 6, 7), apply(mul, 6, 7));
+
+    int (*ops[])(int, int) = { add, mul };   // таблица функций
+    printf("%d\n", ops[1](3, 4));
+    return 0;
+}</code></pre></div>
+    <div class="outbox" data-for="funcptr.c"><div class="codebar"><span class="fname">вывод</span></div><pre><code>3 7 19 25 42
+13 42
+12</code></pre></div>
+    <p>Где это встречается в реальности: таблица векторов прерываний в микроконтроллере (массив адресов обработчиков), структура <code>file_operations</code> в драйверах Linux (указатели на функции open, read, write), колбэки в библиотеках и конечные автоматы.</p>
+    <p>Сложные типы удобно называть через <code>typedef</code>: <code>typedef int (*BinOp)(int, int);</code>, и дальше писать просто <code>BinOp op</code>.</p>
+
+    <h4>Упражнения</h4>
+    <ol class="tasks">
+      <li><div><span class="lvl l1">база</span>Отсортируй массив строк (<code>const char *words[]</code>) через <code>qsort</code> и <code>strcmp</code>. Подумай, что именно получает компаратор.</div></li>
+      <li><div><span class="lvl l2">средне</span>Калькулятор: таблица <code>{ '+', add }, { '-', sub }, …</code> из структур и поиск функции по символу операции.</div></li>
+      <li><div><span class="lvl l3">сложно</span>Напиши свою <code>void my_sort(void *base, size_t n, size_t size, int (*cmp)(const void *, const void *))</code> (вставками) и обменивай элементы побайтово.</div></li>
+    </ol>
+    <label class="donebox"><input type="checkbox" data-done="m16" id="done-m16"> Модуль пройден</label>
+  </div>
+</section>
+
+<!-- ============ 17 ============ -->
+<section class="mod" id="m17">
+  <div class="mod-head">
+    <div class="mod-num">МОДУЛЬ 17</div>
+    <h2>Неопределённое поведение и отладка</h2>
+    <p class="why">Профессионала на C отличает от любителя умение находить ошибки памяти, а не скорость набора кода.</p>
+  </div>
+  <div class="prose">
+    <h3>Что такое UB</h3>
+    <p><strong>Undefined behavior</strong> — ситуация, для которой стандарт C не определяет результат. Компилятор вправе считать, что UB в программе никогда не случается, и оптимизировать код исходя из этого. Поэтому программа с UB может работать на твоём ноутбуке, падать на сервере и вести себя иначе с флагом <code>-O2</code>.</p>
+    <div class="tblwrap"><table>
+      <thead><tr><th>Частые случаи UB</th><th>Чем ловить</th></tr></thead>
+      <tbody>
+        <tr><td>Выход за границы массива</td><td>ASan, valgrind</td></tr>
+        <tr><td>Use-after-free, double free</td><td>ASan, valgrind</td></tr>
+        <tr><td>Чтение неинициализированной переменной</td><td>valgrind, <code>-Wall</code> (частично)</td></tr>
+        <tr><td>Переполнение знакового целого</td><td>UBSan (<code>-fsanitize=undefined</code>)</td></tr>
+        <tr><td>Разыменование NULL</td><td>Падение (segfault), отладчик</td></tr>
+        <tr><td>Сдвиг на ширину типа и больше</td><td>UBSan</td></tr>
+        <tr><td>Изменение строкового литерала</td><td>Падение, <code>-Wwrite-strings</code></td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Санитайзеры на практике</h3>
+    <div class="codebox"><pre data-lang="c" data-file="bug.c" data-expect-fail="1"><code>#include &lt;stdlib.h&gt;
+
+int main(void) {
+    int *arr = malloc(5 * sizeof *arr);
+    if (arr == NULL) return 1;
+    for (int i = 0; i &lt;= 5; i++)   // ошибка: &lt;= вместо &lt;
+        arr[i] = i;
+    free(arr);
+    return 0;
+}</code></pre></div>
+    <div class="outbox"><div class="codebar"><span class="fname">отчёт ASan (сокращён)</span></div><pre><code id="asan-out">==561==ERROR: AddressSanitizer: heap-buffer-overflow on address 0x503000000054
+WRITE of size 4 at 0x503000000054 thread T0
+    #0 0x55ab49d15344 in main bug.c:7
+
+0x503000000054 is located 0 bytes after 20-byte region [0x503000000040,0x503000000054)
+allocated by thread T0 here:
+    #0 0x7f477bcfd9c7 in malloc
+    #1 0x55ab49d1527f in main bug.c:4
+
+SUMMARY: AddressSanitizer: heap-buffer-overflow bug.c:7 in main</code></pre></div>
+    <p>Как читать отчёт: <strong>что</strong> случилось (heap-buffer-overflow, то есть выход за границу блока в куче), <strong>где</strong> (bug.c:7, запись 4 байт), <strong>чья это память</strong> (блок в 20 байт, выделенный в строке 4). Мы записали сразу за его концом. Ошибка найдена за секунду, а без санитайзера программа, скорее всего, отработала бы «нормально».</p>
+
+    <h3>valgrind</h3>
+    <div class="codebox"><pre data-lang="sh" data-name="терминал (Linux / WSL)"><code>gcc -g bug.c -o bug             # без -fsanitize: valgrind и ASan вместе не работают
+valgrind --leak-check=full ./bug</code></pre></div>
+    <p>Valgrind медленнее ASan, но не требует пересборки с особыми флагами и хорошо находит утечки и чтение неинициализированной памяти.</p>
+
+    <h3>Отладчик gdb: минимальный набор</h3>
+    <div class="tblwrap"><table>
+      <thead><tr><th>Команда</th><th>Что делает</th></tr></thead>
+      <tbody>
+        <tr><td><code>gdb ./app</code></td><td>Запустить программу под отладчиком (собирать с <code>-g</code>)</td></tr>
+        <tr><td><code>break main</code> / <code>break file.c:42</code></td><td>Точка останова на функции или строке</td></tr>
+        <tr><td><code>run</code> / <code>run arg1 arg2</code></td><td>Запустить программу (с аргументами)</td></tr>
+        <tr><td><code>next</code> / <code>step</code></td><td>Следующая строка; <code>step</code> заходит внутрь функций</td></tr>
+        <tr><td><code>print x</code> / <code>print *arr@5</code></td><td>Показать переменную или первые 5 элементов массива</td></tr>
+        <tr><td><code>bt</code></td><td>Стек вызовов: как мы сюда попали. Первая команда после падения</td></tr>
+        <tr><td><code>watch x</code></td><td>Остановиться, когда x изменится</td></tr>
+        <tr><td><code>continue</code> / <code>quit</code></td><td>Продолжить выполнение / выйти</td></tr>
+      </tbody>
+    </table></div>
+    <p>В VS Code тот же gdb работает через графический интерфейс: поставь точку останова кликом слева от номера строки и нажми <kbd>F5</kbd>. Расширение C/C++ предложит создать конфигурацию запуска. Но команды выше всё равно выучи: на удалённом сервере или плате графического интерфейса не будет.</p>
+
+    <h3>Дополнительные проверки</h3>
+    <ul>
+      <li><code>-Werror</code> превращает предупреждения в ошибки и не даёт их игнорировать.</li>
+      <li><code>-Wconversion -Wshadow</code> включают предупреждения о неявных преобразованиях типов и затенённых переменных. Включай их, когда базовые флаги перестанут ругаться.</li>
+      <li><strong>Статические анализаторы</strong> (<code>cppcheck</code>, <code>clang-tidy</code>) ищут ошибки без запуска программы.</li>
+    </ul>
+
+    <h4>Упражнения</h4>
+    <ol class="tasks">
+      <li><div><span class="lvl l1">база</span>Запусти <code>bug.c</code> с ASan и под valgrind. Сравни отчёты.</div></li>
+      <li><div><span class="lvl l1">база</span>Напиши программу, которая падает с segfault, найди место падения в gdb командой <code>bt</code>.</div></li>
+      <li><div><span class="lvl l2">средне</span>Пройди всю программу <code>vec_demo.c</code> в gdb пошагово и следи за <code>v.cap</code> и <code>v.data</code> во время <code>realloc</code>.</div></li>
+      <li><div><span class="lvl l3">сложно</span>Напиши <code>int x = INT_MAX; if (x + 1 &lt; x) puts("overflow");</code>. Сравни вывод с <code>-O0</code> и с <code>-O2</code>, потом посмотри ассемблер на godbolt. Это наглядная демонстрация UB.</div></li>
+    </ol>
+    <label class="donebox"><input type="checkbox" data-done="m17" id="done-m17"> Модуль пройден</label>
+  </div>
+</section>
+
+<!-- ============ 18 ============ -->
+<section class="mod" id="m18">
+  <div class="mod-head">
+    <div class="mod-num">МОДУЛЬ 18</div>
+    <h2>Финальные проекты</h2>
+    <p class="why">Проекты превращают знание синтаксиса в умение программировать. Эти же проекты станут первыми строками в твоём GitHub.</p>
+  </div>
+  <div class="prose">
+    <p>Сделай минимум три проекта из списка, по порядку сложности. Каждый проект — отдельный репозиторий на GitHub с <code>Makefile</code> и <code>README.md</code> (что делает, как собрать, пример запуска).</p>
+    <ol class="tasks">
+      <li><div><span class="lvl l1">база</span><strong>Калькулятор в обратной польской записи.</strong> Ввод <code>3 4 + 2 *</code> → 14. Стек на массиве, разбор строки, обработка ошибок («мало операндов», «деление на ноль»).</div></li>
+      <li><div><span class="lvl l1">база</span><strong>mygrep с флагами.</strong> <code>-n</code> (номера строк), <code>-i</code> (без учёта регистра), <code>-c</code> (только количество), несколько файлов в аргументах.</div></li>
+      <li><div><span class="lvl l2">средне</span><strong>Библиотека связного списка.</strong> <code>push_front</code>, <code>push_back</code>, <code>find</code>, <code>remove</code>, <code>reverse</code>, <code>destroy</code>. Плюс тесты на <code>assert</code> и ноль утечек под valgrind.</div></li>
+      <li><div><span class="lvl l2">средне</span><strong>Частотный словарь.</strong> Хеш-таблица «строка → число» с цепочками. Прочитай большую книгу в .txt и выведи 20 самых частых слов.</div></li>
+      <li><div><span class="lvl l2">средне</span><strong>Игра «Жизнь» Конвея</strong> в терминале: двумерный массив, загрузка начального поля из файла, анимация через перерисовку экрана.</div></li>
+      <li><div><span class="lvl l3">сложно</span><strong>Пул-аллокатор.</strong> <code>pool_alloc</code> и <code>pool_free</code> для блоков фиксированного размера внутри статического массива на 64 КБ, без вызова <code>malloc</code>. Так управляют памятью в embedded.</div></li>
+    </ol>
+    <div class="callout tip">
+      <span class="lbl">Проект считается готовым, когда</span>
+      <ul>
+        <li>компилируется с <code>-Wall -Wextra -Wpedantic</code> без единого предупреждения;</li>
+        <li>под ASan и valgrind нет ошибок и утечек;</li>
+        <li>все ошибки ввода обработаны: пустой файл, неверные аргументы, нехватка памяти;</li>
+        <li>человек со стороны может собрать проект по README за минуту.</li>
+      </ul>
+    </div>
+    <p>После этого курса база закрыта, и пора выбирать направление (embedded, системное программирование под Linux или безопасность). Вернись ко мне, когда закончишь проекты, и обсудим следующий шаг.</p>
+    <label class="donebox"><input type="checkbox" data-done="m18" id="done-m18"> Модуль пройден</label>
+  </div>
+</section>
+
+<!-- ============ RESOURCES ============ -->
+<section class="mod" id="res">
+  <div class="mod-head">
+    <div class="mod-num">МАТЕРИАЛЫ</div>
+    <h2>Видео, курсы, книги</h2>
+    <p class="why">Всё бесплатно. Бесплатность курсов на Stepik проверена в октябре 2026 года.</p>
+  </div>
+  <div class="prose">
+    <h3>Видео на русском</h3>
+    <ul class="res">
+      <li>
+        <span class="t"><a href="https://youtube.com/playlist?list=PLA0M1Bcd0w8w-mqVmBjt-2J8Z1gVmPZVz" target="_blank" rel="noopener">Сергей Балакирев (selfedu): уроки по языку C</a></span>
+        <span class="meta">YouTube · с нуля · главный видеокурс на модули 02–16</span>
+        <p>Спокойная подача, тема за темой, от типов до указателей и памяти. Плейлист начинается с C и продолжается C++, для этого курса тебе нужна первая часть. Смотри урок, потом делай упражнения из соответствующего модуля здесь.</p>
+      </li>
+      <li>
+        <span class="t"><a href="https://www.youtube.com/@tilir/playlists" target="_blank" rel="noopener">Константин Владимиров: «Практика языка C (МФТИ)»</a></span>
+        <span class="meta">YouTube и Rutube · университетский уровень · после 4–5 недель курса</span>
+        <p>Семинары первого курса МФТИ. Автор много лет работал инженером компиляторов в Intel. Здесь глубина: стандарт языка, неопределённое поведение, как C превращается в ассемблер. Это то, что отличает человека, «знающего синтаксис», от низкоуровневого инженера. Примеры кода к курсу лежат на <a href="https://github.com/tilir/c-graduate" target="_blank" rel="noopener">github.com/tilir/c-graduate</a>.</p>
+      </li>
+      <li>
+        <span class="t"><a href="https://www.youtube.com/results?search_query=CS50+%D0%BD%D0%B0+%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%BE%D0%BC" target="_blank" rel="noopener">CS50 на русском (Гарвард)</a></span>
+        <span class="meta">YouTube · введение в информатику · параллельно с первыми модулями</span>
+        <p>Самый известный вводный курс в мире, перевод сделали JavaRush и студия Vert Dider. Первые недели курса идут на C. Лекции объясняют, как устроены память, алгоритмы и компьютер в целом. Учти, что там используется учебная библиотека <code>cs50.h</code>, которой нет в обычном C.</p>
+      </li>
+      <li>
+        <span class="t"><a href="https://www.youtube.com/@lectory_fpmi/playlists" target="_blank" rel="noopener">Лекторий ФПМИ МФТИ</a></span>
+        <span class="meta">YouTube · на потом · архитектура, ОС, алгоритмы</span>
+        <p>Большая бесплатная библиотека университетских лекций. После базы C пригодятся курсы по архитектуре компьютера, операционным системам и алгоритмам. Это следующий уровень для низкоуровневого программиста.</p>
+      </li>
+    </ul>
+    <div class="callout info">
+      <span class="lbl">Как смотреть</span>
+      <p>На скорости 1,25–1,5, с открытым редактором. Остановил видео, перепечатал пример, изменил его, запустил. Если досмотрел урок и не написал ни строки кода, считай, что не смотрел.</p>
+    </div>
+
+    <h3>Интерактивные курсы с задачами</h3>
+    <ul class="res">
+      <li>
+        <span class="t"><a href="https://stepik.org/course/57680/promo" target="_blank" rel="noopener">«C для начинающих (теория и задачи)»</a></span>
+        <span class="meta">Stepik · бесплатно · 156 уроков, 204 задачи с автопроверкой, ~10 часов видео</span>
+        <p>Глубоко разбирает указатели и динамическую память. Есть Discord-канал для вопросов. Хорошая пара к этому курсу: задачи проверяет машина.</p>
+      </li>
+      <li>
+        <span class="t"><a href="https://stepik.org/course/3078/" target="_blank" rel="noopener">«Основы программирования на C. Задачи»</a></span>
+        <span class="meta">Stepik · бесплатно · 273 задачи с автопроверкой</span>
+        <p>Практикум: сотни задач на базовые конструкции. Его советуют для подготовки к «бассейну» Школы 21, бесплатной школы программирования, где обучение начинается с C.</p>
+      </li>
+      <li>
+        <span class="t"><a href="https://metanit.com/c/tutorial/" target="_blank" rel="noopener">metanit.com: руководство по языку C</a></span>
+        <span class="meta">Текст на русском · справочник</span>
+        <p>Удобно, когда нужно быстро освежить конкретную тему.</p>
+      </li>
+    </ul>
+
+    <h3>Книги</h3>
+    <ul class="res">
+      <li>
+        <span class="t">Стивен Прата, «Язык программирования C. Лекции и упражнения»</span>
+        <span class="meta">На русском · самая подробная книга для старта</span>
+        <p>Толстая, но объясняет всё по шагам и содержит много упражнений. Лучший выбор, если хочется одну основную книгу.</p>
+      </li>
+      <li>
+        <span class="t">Брайан Керниган, Деннис Ритчи, «Язык программирования C»</span>
+        <span class="meta">На русском · классика от создателей языка</span>
+        <p>Короткая и плотная. Читай после первых модулей: некоторые приёмы в ней устарели, но упражнения отличные.</p>
+      </li>
+      <li>
+        <span class="t"><a href="https://gustedt.gitlabpages.inria.fr/modern-c/" target="_blank" rel="noopener">Jens Gustedt, «Modern C»</a></span>
+        <span class="meta">На английском · бесплатно от автора</span>
+        <p>Современный C с точки зрения члена комитета по стандартизации. Подойдёт как второй шаг после базы.</p>
+      </li>
+      <li>
+        <span class="t"><a href="https://beej.us/guide/bgc/" target="_blank" rel="noopener">Beej's Guide to C Programming</a></span>
+        <span class="meta">На английском · бесплатно</span>
+        <p>Лёгкий и смешной язык. Заодно хорошая практика технического английского, без которого в низкоуровневой разработке не обойтись: документация к чипам пишется на нём.</p>
+      </li>
+      <li>
+        <span class="t">Брайант, О'Халларон, «Компьютерные системы: архитектура и программирование» (CS:APP)</span>
+        <span class="meta">На русском · после курса</span>
+        <p>Лучшая книга о том, что происходит под кодом на C: представление чисел, ассемблер, память, кэши, линковка. Главный учебник для тех, кто хочет быть низкоуровневым.</p>
+      </li>
+    </ul>
+
+    <h3>Инструменты в браузере</h3>
+    <ul>
+      <li><a href="https://godbolt.org/" target="_blank" rel="noopener">godbolt.org</a> показывает, во что компилируется твой код. Незаменим для понимания низкого уровня.</li>
+      <li><a href="https://cdecl.org/" target="_blank" rel="noopener">cdecl.org</a> переводит запутанные объявления C на английский.</li>
+      <li><a href="https://en.cppreference.com/w/c" target="_blank" rel="noopener">cppreference.com (раздел C)</a> — точная документация по стандартной библиотеке.</li>
+      <li><a href="https://www.onlinegdb.com/" target="_blank" rel="noopener">onlinegdb.com</a> — компилятор и отладчик прямо в браузере.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ PLAN ============ -->
+<section class="mod" id="plan">
+  <div class="mod-head">
+    <div class="mod-num">ПЛАН</div>
+    <h2>8 недель по 1–2 часа в день</h2>
+    <p class="why">Темп можно менять. Не переходи к следующей неделе, пока не сделаны упражнения уровня «база».</p>
+  </div>
+  <div class="prose">
+    <div class="tblwrap"><table class="weeks">
+      <thead><tr><th>Неделя</th><th>Модули</th><th>Практика</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>00–04: окружение, первая программа, типы, операторы</td><td>Упражнения модулей; первые 30 задач на Stepik</td></tr>
+        <tr><td>2</td><td>05–06: ветвления, циклы, функции</td><td>Упражнения; задачи на Stepik по циклам и функциям</td></tr>
+        <tr><td>3</td><td>07–08: массивы и указатели</td><td>Все упражнения модуля 08, включая «средне». Это главная неделя</td></tr>
+        <tr><td>4</td><td>09–10: строки и динамическая память</td><td>Свои <code>strlen</code>, <code>strcpy</code>, <code>strdup</code>; расширенный <code>Vec</code></td></tr>
+        <tr><td>5</td><td>11–12: структуры, несколько файлов, make</td><td>Библиотека строк с тестами; начать семинары Владимирова</td></tr>
+        <tr><td>6</td><td>13–14: файлы, аргументы, биты</td><td><code>mycat</code>, <code>mygrep</code>, <code>hexdump</code></td></tr>
+        <tr><td>7</td><td>15–17: препроцессор, void*, отладка</td><td>Пройти свой код в gdb; прогнать все проекты под valgrind</td></tr>
+        <tr><td>8</td><td>18: проекты</td><td>Три проекта на GitHub с README и Makefile</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<footer>
+  Все примеры с пометкой файла собраны gcc с флагами <code>-std=c17 -Wall -Wextra -Wpedantic -Werror -fsanitize=address,undefined</code>, а их вывод сверен с блоками «вывод». Отметки прогресса и размер шрифта хранятся только в этом браузере.
+</footer>
+  </main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- storage helpers ---------- */
+  function load(key, fallback) {
+    try { var v = localStorage.getItem(key); return v === null ? fallback : JSON.parse(v); }
+    catch (e) { return fallback; }
+  }
+  function save(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+  }
+
+  /* ---------- syntax highlight ---------- */
+  var C_TYPES = "void|char|short|int|long|float|double|signed|unsigned|bool|size_t|ptrdiff_t|FILE|u?int(?:8|16|32|64)_t|Vec|User|Role|Padded|BinOp";
+  var C_KW = "if|else|for|while|do|switch|case|default|break|continue|return|goto|sizeof|struct|union|enum|typedef|const|static|volatile|extern|inline|NULL|true|false";
+  var reC = new RegExp(
+    "(\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/)" +           // 1 comment
+    "|(\"(?:\\\\.|[^\"\\\\\\n])*\"|'(?:\\\\.|[^'\\\\\\n])*')" + // 2 string/char
+    "|(<[\\w./]+\\.h>)" +                                 // 3 <header.h>
+    "|(^[ \\t]*#[ \\t]*[a-z]+)" +                         // 4 preprocessor directive
+    "|(\\b0[xX][0-9a-fA-F]+[uUlL]*\\b|\\b\\d+(?:\\.\\d+)?[uUlLfF]*\\b)" + // 5 number
+    "|\\b(" + C_TYPES + ")\\b" +                          // 6 type
+    "|\\b(" + C_KW + ")\\b",                              // 7 keyword
+    "gm");
+  var reSh = /(#[^\n]*)|("(?:\\.|[^"\\])*"|'[^'\n]*')|(\$\([A-Z_]+\)|\$[@<?])/g;
+  var CLS = [null, "tk-co", "tk-st", "tk-st", "tk-pp", "tk-nu", "tk-ty", "tk-kw"];
+  var CLS_SH = [null, "tk-co", "tk-st", "tk-ty"];
+
+  function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+  function highlight(text, lang) {
+    var re = lang === "c" ? reC : reSh;
+    var cls = lang === "c" ? CLS : CLS_SH;
+    re.lastIndex = 0;
+    var out = "", last = 0, m;
+    while ((m = re.exec(text)) !== null) {
+      if (m[0].length === 0) { re.lastIndex++; continue; }
+      out += esc(text.slice(last, m.index));
+      var g = 1;
+      while (g < m.length && m[g] === undefined) g++;
+      out += '<span class="' + cls[g] + '">' + esc(m[0]) + "</span>";
+      last = m.index + m[0].length;
+    }
+    return out + esc(text.slice(last));
+  }
+
+  /* ---------- code boxes: header bar, copy, highlight ---------- */
+  document.querySelectorAll(".codebox > pre").forEach(function (pre) {
+    var code = pre.querySelector("code");
+    if (!code) return;
+    var raw = code.textContent;
+    var lang = pre.getAttribute("data-lang") || "c";
+    code.innerHTML = highlight(raw, lang);
+
+    var name = pre.getAttribute("data-name") || pre.getAttribute("data-file") || (lang === "c" ? "C" : lang);
+    var bar = document.createElement("div");
+    bar.className = "codebar";
+    var fn = document.createElement("span");
+    fn.className = "fname";
+    fn.textContent = name;
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "copy";
+    btn.textContent = "Копировать";
+    btn.addEventListener("click", function () {
+      function done(ok) {
+        btn.textContent = ok ? "Скопировано" : "Выделено: Ctrl+C";
+        btn.classList.toggle("ok", ok);
+        setTimeout(function () { btn.textContent = "Копировать"; btn.classList.remove("ok"); }, 1800);
+      }
+      function fallback() {
+        var r = document.createRange();
+        r.selectNodeContents(code);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(r);
+        done(false);
+      }
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(raw).then(function () { done(true); }, fallback);
+        } else { fallback(); }
+      } catch (e) { fallback(); }
+    });
+    bar.appendChild(fn);
+    bar.appendChild(btn);
+    pre.parentNode.insertBefore(bar, pre);
+  });
+
+  /* ---------- progress ---------- */
+  var KEY = "si-s-nulya:done";
+  var done = load(KEY, {});
+  var boxes = document.querySelectorAll("input[data-done]");
+  var total = boxes.length;
+  function render() {
+    var n = 0;
+    boxes.forEach(function (b) {
+      var id = b.getAttribute("data-done");
+      b.checked = !!done[id];
+      if (done[id]) n++;
+      var link = document.querySelector('.toc a[href="#' + id + '"]');
+      if (link) link.parentNode.classList.toggle("done", !!done[id]);
+    });
+    document.getElementById("pfill").style.width = (total ? (n / total * 100) : 0) + "%";
+    document.getElementById("plabel").textContent = "Пройдено " + n + " из " + total + " модулей";
+  }
+  boxes.forEach(function (b) {
+    b.addEventListener("change", function () {
+      var id = b.getAttribute("data-done");
+      if (b.checked) done[id] = true; else delete done[id];
+      save(KEY, done);
+      render();
+    });
+  });
+  render();
+
+  /* ---------- font size ---------- */
+  var FS_KEY = "si-s-nulya:fs";
+  var fs = load(FS_KEY, null);
+  var fsOut = document.getElementById("fs-val");
+  function applyFs() {
+    if (fs) document.documentElement.style.setProperty("--fs", fs + "px");
+    fsOut.textContent = fs || parseInt(getComputedStyle(document.body).fontSize, 10);
+  }
+  function stepFs(d) {
+    var cur = fs || parseInt(getComputedStyle(document.body).fontSize, 10);
+    fs = Math.max(14, Math.min(24, cur + d));
+    save(FS_KEY, fs);
+    applyFs();
+  }
+  document.getElementById("fs-dn").addEventListener("click", function () { stepFs(-1); });
+  document.getElementById("fs-up").addEventListener("click", function () { stepFs(1); });
+  applyFs();
+
+  /* ---------- toc: open on wide screens, highlight current ---------- */
+  var toc = document.getElementById("toc");
+  var wide = window.matchMedia("(min-width: 921px)");
+  function syncToc() { if (wide.matches) toc.open = true; }
+  syncToc();
+  if (wide.addEventListener) wide.addEventListener("change", syncToc);
+  toc.addEventListener("click", function (e) {
+    if (!wide.matches && e.target.closest("a")) toc.open = false;
+  });
+
+  if ("IntersectionObserver" in window) {
+    var links = {};
+    document.querySelectorAll(".toc a").forEach(function (a) { links[a.getAttribute("href").slice(1)] = a.parentNode; });
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting && links[en.target.id]) {
+          Object.keys(links).forEach(function (k) { links[k].classList.remove("current"); });
+          links[en.target.id].classList.add("current");
+        }
+      });
+    }, { rootMargin: "-20% 0px -70% 0px" });
+    document.querySelectorAll("section.mod").forEach(function (s) { io.observe(s); });
+  }
+})();
+</script>
+  </main>
+</div>
+</body></html>
