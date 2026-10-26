@@ -1,4 +1,4 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body><title>Си с нуля</title>
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Си с нуля</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -345,7 +345,31 @@ details.spoiler .codebox, details.spoiler .outbox { margin-top: 6px; }
   .appendix-item { break-inside: avoid; margin-bottom: 14px; }
   .appendix-item h4 { margin-top: 10px; }
 }
+
+/* ---- v3 additions ---- */
+.hero-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin: 22px 0 0; }
+.btn { display: inline-block; font: 600 15px var(--f-ui); color: var(--accent-ink); background: var(--accent); padding: 10px 18px; border-radius: 8px; text-decoration: none; }
+.btn:hover { color: var(--accent-ink); background: #f6c47d; }
+#resume-note { font: 13.5px var(--f-ui); color: var(--muted); }
+.reader { flex-wrap: wrap; }
+.reader .reset { margin-left: auto; font-weight: 500; color: var(--muted); }
+.reader .reset.arm { color: var(--bad); border-color: var(--bad); }
+.search { margin: 0 0 14px; }
+.search input { width: 100%; font: 14px var(--f-ui); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+.search input::placeholder { color: var(--muted); }
+.search-res { list-style: none; margin: 6px 0 0; padding: 0; display: none; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); max-height: 50vh; overflow: auto; }
+.search-res.open { display: block; }
+.search-res li { margin: 0; }
+.search-res button { display: block; width: 100%; text-align: left; cursor: pointer; background: none; border: 0; padding: 7px 10px; font: 13.5px/1.35 var(--f-ui); color: var(--fg); }
+.search-res button:hover, .search-res button:focus-visible { background: var(--panel-2); }
+.search-res small { display: block; color: var(--muted); font-size: 11.5px; }
+.search-empty { padding: 8px 10px; font: 13px var(--f-ui); color: var(--muted); }
+.lesson-next { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin: 28px 0 24px; padding: 14px 18px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); font: 14px var(--f-ui); color: var(--muted); max-width: 70ch; }
+.lesson-next b { color: var(--fg-strong); }
+.lesson-next a { font-weight: 600; }
+@media print { .hero-cta, .lesson-next, .search { display: none !important; } }
 </style>
+</head><body>
 <div class="shell">
 
 <aside class="side">
@@ -355,16 +379,18 @@ details.spoiler .codebox, details.spoiler .outbox { margin-top: 6px; }
       <div class="progress-track"><div class="progress-fill" id="pfill"></div></div>
       <div class="progress-label" id="plabel">Решено 0 задач</div>
     </div>
+    <div class="search"><input type="search" id="q" placeholder="Поиск по курсу ( / )" aria-label="Поиск по курсу" autocomplete="off"><ul class="search-res" id="qres"></ul></div>
     <ol id="toclist">
-      <li class="group">Старт</li><li><a href="#why"><span class="n">·</span><span>Что изменилось</span><span class="cnt"></span></a></li><li><a href="#howto"><span class="n">·</span><span>Как учиться</span><span class="cnt"></span></a></li><li><a href="#setup"><span class="n">·</span><span>Практикум и автопроверка</span><span class="cnt"></span></a></li><li><a href="#method"><span class="n">·</span><span>Как решать задачу</span><span class="cnt"></span></a></li>
+      <li class="group">Старт</li><li><a href="#start"><span class="n">·</span><span>Как устроен курс</span><span class="cnt"></span></a></li><li><a href="#howto"><span class="n">·</span><span>Как учиться</span><span class="cnt"></span></a></li><li><a href="#setup"><span class="n">·</span><span>Практикум и автопроверка</span><span class="cnt"></span></a></li><li><a href="#method"><span class="n">·</span><span>Как решать задачу</span><span class="cnt"></span></a></li>
       <li class="group">Уроки</li><li data-lesson="01"><a href="#l1"><span class="n">01</span><span>Переменные, ввод и арифметика</span><span class="cnt" data-cnt="01">0/5</span></a></li><li data-lesson="02"><a href="#l2"><span class="n">02</span><span>Условия</span><span class="cnt" data-cnt="02">0/6</span></a></li><li data-lesson="03"><a href="#l3"><span class="n">03</span><span>Циклы</span><span class="cnt" data-cnt="03">0/6</span></a></li><li data-lesson="04"><a href="#l4"><span class="n">04</span><span>Функции</span><span class="cnt" data-cnt="04">0/6</span></a></li><li data-lesson="05"><a href="#l5"><span class="n">05</span><span>Массивы</span><span class="cnt" data-cnt="05">0/6</span></a></li><li data-lesson="06"><a href="#l6"><span class="n">06</span><span>Отладка</span><span class="cnt" data-cnt="06">0/3</span></a></li><li data-lesson="07"><a href="#l7"><span class="n">07</span><span>Указатели</span><span class="cnt" data-cnt="07">0/6</span></a></li><li data-lesson="08"><a href="#l8"><span class="n">08</span><span>Строки</span><span class="cnt" data-cnt="08">0/6</span></a></li><li data-lesson="09"><a href="#l9"><span class="n">09</span><span>Динамическая память</span><span class="cnt" data-cnt="09">0/5</span></a></li><li data-lesson="10"><a href="#l10"><span class="n">10</span><span>Структуры</span><span class="cnt" data-cnt="10">0/5</span></a></li><li data-lesson="11"><a href="#l11"><span class="n">11</span><span>Файлы и аргументы</span><span class="cnt" data-cnt="11">0/5</span></a></li><li data-lesson="12"><a href="#l12"><span class="n">12</span><span>Биты</span><span class="cnt" data-cnt="12">0/5</span></a></li><li data-lesson="13"><a href="#l13"><span class="n">13</span><span>Финальный проект</span><span class="cnt" data-cnt="13">0/2</span></a></li>
-      <li class="group">Дальше</li><li><a href="#ref"><span class="n">→</span><span>Справочник</span><span class="cnt"></span></a></li><li><a href="#materials"><span class="n">→</span><span>Видео и книги</span><span class="cnt"></span></a></li><li><a href="#plan"><span class="n">→</span><span>План занятий</span><span class="cnt"></span></a></li>
+      <li data-lesson="14"><a href="#l14"><span class="n">14</span><span>Связные списки и рекурсия</span><span class="cnt" data-cnt="14">0/3</span></a></li><li class="group">Дальше</li><li><a href="#ref"><span class="n">→</span><span>Справочник</span><span class="cnt"></span></a></li><li><a href="#materials"><span class="n">→</span><span>Видео и книги</span><span class="cnt"></span></a></li><li><a href="#plan"><span class="n">→</span><span>План занятий</span><span class="cnt"></span></a></li>
     </ol>
     <div class="reader">
       <span>Шрифт</span>
       <button type="button" id="fs-dn" aria-label="Уменьшить шрифт">A−</button>
       <output id="fs-val">17</output>
       <button type="button" id="fs-up" aria-label="Увеличить шрифт">A+</button>
+      <button type="button" id="reset" class="reset">Сбросить прогресс</button>
     </div>
   </details>
 </aside>
@@ -375,24 +401,26 @@ details.spoiler .codebox, details.spoiler .outbox { margin-top: 6px; }
   <h1>Си с нуля<span class="semi">;</span></h1>
   <p class="lede">Здесь ты учишься программировать, а не читаешь про программирование. В каждом уроке есть разбор того, как думать над задачей, упражнения на понимание и задачи, решения которых проверяет автопроверка прямо на твоём компьютере.</p>
   <ul class="facts">
-    <li><b>13</b> уроков</li>
-    <li><b>66</b> задач с решениями</li>
-    <li><b>346</b> автотестов</li>
-    <li>Всё <b>бесплатно</b> и работает без интернета</li>
+    <li><b>14</b> уроков</li>
+    <li><b>69</b> задач с решениями</li>
+    <li><b>346</b> автотестов (уроки 1–13)</li>
+    <li>Всё <b>бесплатно</b>, автопроверка работает без интернета</li>
   </ul>
+  <p class="hero-cta"><a class="btn" id="resume" href="#l1">Начать урок 1</a><span id="resume-note"></span></p>
 </header>
 
-<section class="mod" id="why">
-  <div class="mod-head"><div class="mod-num">СТАРТ</div><h2>Что изменилось</h2></div>
+<section class="mod" id="start">
+  <div class="mod-head"><div class="mod-num">СТАРТ</div><h2>Как устроен курс</h2>
+    <p class="why">13 уроков ведут от первой программы до финального проекта, а урок 14 добавляет связные списки. Все уроки построены одинаково, так что после первого ты будешь знать, где что искать.</p></div>
   <div class="prose why-rebuilt">
-    <p>Первая версия курса была справочником с упражнениями: объясняла темы, но не учила решать задачи, и проверить решение без помощи было нельзя. Программированию так не учатся. Навык появляется, когда ты сам пишешь программу, она не работает, и ты находишь почему. Поэтому теперь каждый урок устроен так:</p>
+    <p>В каждом уроке четыре части:</p>
     <ol>
       <li><strong>Теория</strong>: коротко и только то, что нужно для задач урока. Подробные таблицы вынесены в справочник в конце.</li>
       <li><strong>Как думать</strong>: разбор решения одной задачи от чтения условия до проверки крайних случаев, вместе с ошибками по пути.</li>
       <li><strong>Проверь себя</strong>: «предскажи вывод» и «найди ошибку». Это тренировка чтения кода, без которой не получится писать свой.</li>
       <li><strong>Задачи</strong> от простых к сложным. У каждой есть заготовка, тесты, две подсказки и решение.</li>
     </ol>
-    <p>Если ты прошёл модули 0–2 первой версии (окружение и первая программа), переходи к разделу «Практикум и автопроверка», а затем к уроку 1.</p>
+    <p>Порядок действий: прочитай «Как учиться», поставь компилятор и проверь автопроверку в разделе «Практикум и автопроверка», затем иди к уроку 1. Кнопка «Продолжить» вверху страницы запоминает, на какой задаче ты остановился.</p>
   </div>
 </section>
 
@@ -418,6 +446,20 @@ details.spoiler .codebox, details.spoiler .outbox { margin-top: 6px; }
   <div class="mod-head"><div class="mod-num">СТАРТ</div><h2>Практикум и автопроверка</h2>
     <p class="why">Автопроверка заменяет преподавателя, который проверяет твой код. Она работает на твоём компьютере, бесплатно и сколько угодно раз.</p></div>
   <div class="prose">
+    <h3>Сначала установи компилятор</h3>
+    <p>Нужны <code>gcc</code> (или совместимый <code>clang</code>), <code>make</code> и отладчик. Выбери свою систему.</p>
+    <p><strong>Windows.</strong> Открой PowerShell от имени администратора, поставь WSL и перезагрузи компьютер. После перезагрузки Ubuntu попросит придумать имя пользователя и пароль. Дальше все команды выполняй в окне Ubuntu.</p>
+    <div class="codebox"><pre data-lang="sh" data-name="PowerShell (администратор)"><code>wsl --install</code></pre></div>
+    <div class="codebox"><pre data-lang="sh" data-name="Ubuntu (WSL)"><code>sudo apt update
+sudo apt install -y build-essential gdb unzip</code></pre></div>
+    <p><strong>Ubuntu и Debian.</strong> Та же пара команд, что для Ubuntu в WSL.</p>
+    <p><strong>Fedora.</strong></p>
+    <div class="codebox"><pre data-lang="sh" data-name="терминал"><code>sudo dnf install -y gcc gdb make libasan libubsan unzip</code></pre></div>
+    <p><strong>macOS.</strong></p>
+    <div class="codebox"><pre data-lang="sh" data-name="терминал"><code>xcode-select --install</code></pre></div>
+    <p>На macOS команда <code>gcc</code> на самом деле запускает clang, и флаги курса он понимает. Отладчик gdb на Маке ставится неудобно, поэтому пользуйся <code>lldb</code>: он уже есть в системе, а команды <code>run</code>, <code>next</code> и <code>print</code> работают так же, как в справочнике.</p>
+    <p>Проверь установку одной командой. Она собирает пустую программу с санитайзерами и должна напечатать <code>OK</code>. Если вместо этого ошибка про <code>asan</code> или <code>ubsan</code>, не хватает библиотек санитайзеров: доустанови пакеты из команды выше.</p>
+    <div class="codebox"><pre data-lang="sh" data-name="терминал"><code>printf 'int main(void){return 0;}\n' > t.c &amp;&amp; gcc -Wall -fsanitize=address,undefined t.c -o t &amp;&amp; ./t &amp;&amp; echo OK</code></pre></div>
     <p>Архив <code>c-praktikum.zip</code> лежит в чате рядом с курсом. Внутри папки уроков <code>01</code>…<code>13</code>, в них папки задач. В каждой задаче есть заготовка <code>main.c</code> (условие записано в комментарии сверху) и папка <code>tests</code> с тестами.</p>
 
     <h3>Windows (WSL)</h3>
@@ -460,6 +502,12 @@ code .</code></pre></div>
       <li>санитайзеры не нашли <strong>ошибок памяти</strong> и неопределённого поведения.</li>
     </ul>
     <p>После этого отметь задачу галочкой «Решено» в курсе, и прогресс в оглавлении обновится.</p>
+    <h3>Если у задачи нет автопроверки</h3>
+    <p>Для урока 14 тестов нет: решение проверяет бесплатный Gemini. Он не запускает код, а только читает его, поэтому сначала сам запусти программу на примерах из условия и под санитайзерами. Потом вставь в Gemini такой запрос, подставив условие и свой код:</p>
+    <div class="codebox"><pre data-lang="txt" data-name="запрос для Gemini"><code>Ты проверяющий по языку C. Условие задачи: [вставь условие]
+Моё решение: [вставь код]
+Найди ошибки логики, памяти и неопределённое поведение. Придумай 5 тестов, включая крайние случаи, и пройди по ним мой код. Ответь: верно или нет, и на каком входе ломается. Готовое решение не пиши, дай только подсказку.</code></pre></div>
+    <p>Gemini может ошибаться. Если он говорит «верно», а санитайзер ругается, прав санитайзер. Если Gemini нашёл ошибку, которой ты не видишь, придумай вход, на котором она проявляется, и проверь сам.</p>
     <div class="callout tip"><span class="lbl">Вручную</span><p>Проверить программу вручную на одном тесте: <code>./main &lt; tests/01.in</code>. Сравнить с ответом: <code>cat tests/01.out</code>. Заготовки сразу компилируются, но тесты не проходят, пока ты не напишешь решение.</p></div>
   </div>
 </section>
@@ -5170,6 +5218,345 @@ clean:
 	rm -f *.o vm</code></pre></div><p>Каждая команда — маленькая функция с одинаковой сигнатурой, а <code>cpu_step</code> только читает байты, разбирает их на поля сдвигами и масками и вызывает обработчик из таблицы по коду операции. Добавить команду — значит написать одну функцию и вписать её в таблицу. Дальше можно развивать проект: написать ассемблер, который переводит текст <code>LDI R0, 5</code> в байты; добавить стек и команды CALL и RET; сделать пошаговый отладчик, который печатает регистры после каждой команды.</p></div></details><label class="donebox"><input type="checkbox" data-task="13/vm" id="done-13-vm"> Решено: check показал ✓</label>
 </article></div></section>
 
+<section class="mod" id="l14">
+  <div class="mod-head">
+    <div class="mod-num">УРОК 14</div>
+    <h2>Связные списки и рекурсия</h2>
+    <div class="goal"><b>Цель урока</b>Научишься строить структуру данных из узлов, которые сами указывают друг на друга, и обходить её циклом и рекурсией. Связные списки постоянно просят написать на собеседованиях по C. Проходи урок после урока 9: нужны <code>malloc</code> и <code>free</code>.</div>
+  </div>
+  <div class="prose">
+  <div class="lesson-part">Теория</div>
+  <h3>Зачем список, если есть массив</h3>
+  <p>Массив лежит в памяти одним куском: вставить элемент в начало значит сдвинуть все остальные. Список состоит из отдельных узлов, каждый хранит значение и адрес следующего узла. Вставка в начало занимает одно действие, но чтобы добраться до элемента номер 500, приходится пройти 499 узлов.</p>
+  <div class="codebox"><pre data-lang="c" data-name="узел списка"><code>struct Node {
+    int val;
+    struct Node *next;   // адрес следующего узла или NULL, если узел последний
+};</code></pre></div>
+  <div class="outbox"><div class="codebar"><span class="fname">список из трёх узлов</span></div><pre><code>head → [ 3 | • ] → [ 2 | • ] → [ 1 | NULL ]</code></pre></div>
+  <p>Сам список — это просто указатель <code>head</code> на первый узел. Пустой список: <code>head == NULL</code>. Каждый узел создаётся через <code>malloc</code> и должен быть освобождён через <code>free</code>.</p>
+  <h3>Вставка в начало</h3>
+  <div class="codebox"><pre data-lang="c" data-name="фрагмент"><code>struct Node *push_front(struct Node *head, int val) {
+    struct Node *node = malloc(sizeof *node);
+    if (node == NULL) {
+        return head;
+    }
+    node-&gt;val = val;
+    node-&gt;next = head;       // новый узел указывает на старую голову
+    return node;             // новый узел становится головой
+}</code></pre></div>
+  <p>Функция возвращает новую голову, поэтому вызывают её так: <code>head = push_front(head, 5);</code>. Если забыть присвоить результат, узел потеряется, а память утечёт.</p>
+  <h3>Обход и освобождение</h3>
+  <div class="codebox"><pre data-lang="c" data-name="фрагмент"><code>for (struct Node *p = head; p != NULL; p = p-&gt;next) {
+    printf("%d ", p-&gt;val);
+}</code></pre></div>
+  <p>С освобождением цикл устроен хитрее: после <code>free(p)</code> читать <code>p->next</code> нельзя, поэтому адрес следующего узла сохраняют заранее.</p>
+  <div class="codebox"><pre data-lang="c" data-name="фрагмент"><code>while (head != NULL) {
+    struct Node *next = head-&gt;next;   // сохранили до free
+    free(head);
+    head = next;
+}</code></pre></div>
+  <div class="callout trap"><span class="lbl">Ловушка</span><p>Самая частая ошибка со списками: <code>free(p); p = p->next;</code>. Это чтение освобождённой памяти. Санитайзер скажет <code>heap-use-after-free</code>, и теперь ты знаешь, что с этим делать.</p></div>
+  <h3>Рекурсия и списки</h3>
+  <p>Список по природе рекурсивен: список — это узел плюс меньший список. Рекурсивная функция всегда состоит из <strong>базы</strong> (когда остановиться) и <strong>шага</strong> (как свести задачу к меньшей). Для факториала это выглядит так:</p>
+  <div class="codebox"><pre data-lang="c" data-name="фрагмент"><code>long long fact(int n) {
+    if (n &lt;= 1) {            // база: здесь рекурсия останавливается
+        return 1;
+    }
+    return n * fact(n - 1);  // шаг: сводим задачу к задаче поменьше
+}</code></pre></div>
+  <p>Вызов <code>fact(3)</code> разворачивается в <code>3 * fact(2)</code>, затем в <code>3 * 2 * fact(1)</code>, и в базе получается <code>3 * 2 * 1 = 6</code>. Каждый вызов лежит в стеке, пока не вернётся тот, что глубже. Если забыть базу, вызовы идут бесконечно, и программа падает с переполнением стека.</p>
+  <div class="lesson-part">Проверь себя</div>
+  <h3>Предскажи вывод</h3>
+  <p>Что напечатает программа? Подсказка: печать есть и до, и после рекурсивного вызова.</p>
+  <div class="codebox"><pre data-lang="c" data-name="программа"><code>#include &lt;stdio.h&gt;
+
+void f(int n) {
+    if (n == 0) {
+        return;
+    }
+    printf("%d ", n);
+    f(n - 1);
+    printf("%d ", n);
+}
+
+int main(void) {
+    f(3);
+    printf("\n");
+    return 0;
+}
+</code></pre></div>
+  <details class="spoiler sol"><summary>Ответ</summary><div class="sp-body"><p>Вывод: <code>3 2 1 1 2 3</code>. Сначала вызовы идут вглубь и печатают числа по убыванию (до вызова), потом возвращаются и печатают их же в обратном порядке (после вызова). Так рекурсия печатает данные «задом наперёд» без дополнительного массива.</p></div></details>
+  <div class="lesson-part">Задачи</div>
+  <article class="task" id="t-14-list_build">
+  <header class="task-head"><span class="task-num">14.1</span><h4 class="task-title">Список вставкой в начало</h4><span class="lvl l1">база</span></header>
+  <div class="task-path">Проверка: запускаешь сам, а верность подтверждает Gemini (рецепт в разделе «Практикум и автопроверка»)</div>
+  <p>Прочитай <code>n</code> (от 1 до 1000) и затем <code>n</code> целых чисел. Добавляй каждое число в начало односвязного списка. Выведи список через пробел от головы к хвосту и освободи всю память.</p>
+  <div class="examples"><div class="ex"><div class="ex-h">Ввод</div><pre><code>3
+1 2 3</code></pre></div><div class="ex"><div class="ex-h">Вывод</div><pre><code>3 2 1</code></pre></div></div>
+  <details class="spoiler "><summary>Подсказка 1</summary><div class="sp-body"><p>Заведи <code>struct Node *head = NULL;</code> и в цикле чтения делай <code>head = push_front(head, x);</code>. Функцию <code>push_front</code> можно взять из теории.</p></div></details>
+  <details class="spoiler "><summary>Подсказка 2</summary><div class="sp-body"><p>Печать и освобождение — два отдельных цикла. Освобождай после печати и сохраняй <code>next</code> до <code>free</code>. Запусти программу с санитайзерами: утечек и ошибок быть не должно.</p></div></details>
+  <details class="spoiler sol"><summary>Решение</summary><div class="sp-body"><div class="codebox"><pre data-lang="c" data-name="main.c"><code>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+struct Node {
+    int val;
+    struct Node *next;
+};
+
+static struct Node *new_node(int val) {
+    struct Node *node = malloc(sizeof *node);
+    if (node == NULL) {
+        exit(1);
+    }
+    node-&gt;val = val;
+    node-&gt;next = NULL;
+    return node;
+}
+
+static struct Node *push_front(struct Node *head, int val) {
+    struct Node *node = new_node(val);
+    node-&gt;next = head;
+    return node;
+}
+
+static void print_list(const struct Node *p) {
+    if (p == NULL) {
+        printf("empty\n");
+        return;
+    }
+    for (; p != NULL; p = p-&gt;next) {
+        printf("%d%c", p-&gt;val, p-&gt;next != NULL ? ' ' : '\n');
+    }
+}
+
+static void free_list(struct Node *p) {
+    while (p != NULL) {
+        struct Node *next = p-&gt;next;
+        free(p);
+        p = next;
+    }
+}
+
+int main(void) {
+    int n;
+    if (scanf("%d", &amp;n) != 1 || n &lt; 1 || n &gt; 1000) {
+        return 1;
+    }
+    struct Node *head = NULL;
+    for (int i = 0; i &lt; n; i++) {
+        int x;
+        if (scanf("%d", &amp;x) != 1) {
+            free_list(head);
+            return 1;
+        }
+        head = push_front(head, x);
+    }
+    print_list(head);
+    free_list(head);
+    return 0;
+}
+</code></pre></div></div></details>
+  <label class="donebox"><input type="checkbox" data-task="14/list_build" id="done-14-list_build"> Решено: Gemini подтвердил, что решение верное</label>
+</article>
+<article class="task" id="t-14-list_rev">
+  <header class="task-head"><span class="task-num">14.2</span><h4 class="task-title">Разворот списка на месте</h4><span class="lvl l2">средне</span></header>
+  <div class="task-path">Проверка: запускаешь сам, а верность подтверждает Gemini (рецепт в разделе «Практикум и автопроверка»)</div>
+  <p>Прочитай <code>n</code> и <code>n</code> чисел (как в предыдущей задаче), но добавляй их в <strong>конец</strong> списка. Выведи список, затем разверни его <em>на месте</em>, не создавая новых узлов, и выведи ещё раз.</p>
+  <div class="examples"><div class="ex"><div class="ex-h">Ввод</div><pre><code>5
+1 2 3 4 5</code></pre></div><div class="ex"><div class="ex-h">Вывод</div><pre><code>1 2 3 4 5
+5 4 3 2 1</code></pre></div></div>
+  <details class="spoiler "><summary>Подсказка 1</summary><div class="sp-body"><p>Для разворота нужны три указателя: <code>prev</code> (уже развёрнутая часть, сначала <code>NULL</code>), текущий узел и <code>next</code> (сохранён заранее).</p></div></details>
+  <details class="spoiler "><summary>Подсказка 2</summary><div class="sp-body"><p>На каждом шаге: сохрани <code>next = head->next</code>, перенаправь <code>head->next = prev</code>, сдвинь <code>prev = head</code> и <code>head = next</code>. В конце новая голова — это <code>prev</code>. Нарисуй три узла на бумаге и пройди цикл по шагам.</p></div></details>
+  <details class="spoiler sol"><summary>Решение</summary><div class="sp-body"><div class="codebox"><pre data-lang="c" data-name="main.c"><code>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+struct Node {
+    int val;
+    struct Node *next;
+};
+
+static struct Node *new_node(int val) {
+    struct Node *node = malloc(sizeof *node);
+    if (node == NULL) {
+        exit(1);
+    }
+    node-&gt;val = val;
+    node-&gt;next = NULL;
+    return node;
+}
+
+static struct Node *push_back(struct Node *head, int val) {
+    struct Node *node = new_node(val);
+    if (head == NULL) {
+        return node;
+    }
+    struct Node *p = head;
+    while (p-&gt;next != NULL) {
+        p = p-&gt;next;
+    }
+    p-&gt;next = node;
+    return head;
+}
+
+static struct Node *reverse(struct Node *head) {
+    struct Node *prev = NULL;
+    while (head != NULL) {
+        struct Node *next = head-&gt;next;
+        head-&gt;next = prev;
+        prev = head;
+        head = next;
+    }
+    return prev;
+}
+
+static void print_list(const struct Node *p) {
+    if (p == NULL) {
+        printf("empty\n");
+        return;
+    }
+    for (; p != NULL; p = p-&gt;next) {
+        printf("%d%c", p-&gt;val, p-&gt;next != NULL ? ' ' : '\n');
+    }
+}
+
+static void free_list(struct Node *p) {
+    while (p != NULL) {
+        struct Node *next = p-&gt;next;
+        free(p);
+        p = next;
+    }
+}
+
+int main(void) {
+    int n;
+    if (scanf("%d", &amp;n) != 1 || n &lt; 1 || n &gt; 1000) {
+        return 1;
+    }
+    struct Node *head = NULL;
+    for (int i = 0; i &lt; n; i++) {
+        int x;
+        if (scanf("%d", &amp;x) != 1) {
+            free_list(head);
+            return 1;
+        }
+        head = push_back(head, x);
+    }
+    print_list(head);
+    head = reverse(head);
+    print_list(head);
+    free_list(head);
+    return 0;
+}
+</code></pre></div></div></details>
+  <label class="donebox"><input type="checkbox" data-task="14/list_rev" id="done-14-list_rev"> Решено: Gemini подтвердил, что решение верное</label>
+</article>
+<article class="task" id="t-14-list_del">
+  <header class="task-head"><span class="task-num">14.3</span><h4 class="task-title">Удаление всех вхождений</h4><span class="lvl l2">средне</span></header>
+  <div class="task-path">Проверка: запускаешь сам, а верность подтверждает Gemini (рецепт в разделе «Практикум и автопроверка»)</div>
+  <p>Прочитай <code>n</code>, затем <code>n</code> чисел в список (в порядке чтения), затем число <code>x</code>. Удали из списка все узлы со значением <code>x</code> и выведи результат. Если список опустел, выведи <code>empty</code>.</p>
+  <div class="examples"><div class="ex"><div class="ex-h">Ввод</div><pre><code>5
+1 2 3 2 4
+2</code></pre></div><div class="ex"><div class="ex-h">Вывод</div><pre><code>1 3 4</code></pre></div><div class="ex"><div class="ex-h">Ввод</div><pre><code>3
+7 7 7
+7</code></pre></div><div class="ex"><div class="ex-h">Вывод</div><pre><code>empty</code></pre></div></div>
+  <details class="spoiler "><summary>Подсказка 1</summary><div class="sp-body"><p>Два случая: удаляемые узлы в начале (меняется <code>head</code>) и удаляемые узлы в середине или конце (меняется <code>next</code> предыдущего). Сначала отдельным циклом убери всё совпадающее с головы.</p></div></details>
+  <details class="spoiler "><summary>Подсказка 2</summary><div class="sp-body"><p>Дальше иди указателем <code>p</code> и смотри на <code>p->next</code>. Если он подлежит удалению, перекинь <code>p->next</code> через него и освободи. Если нет, сдвинь <code>p</code>. После удаления <code>p</code> не двигай: следующий узел тоже может совпасть.</p></div></details>
+  <details class="spoiler sol"><summary>Решение</summary><div class="sp-body"><div class="codebox"><pre data-lang="c" data-name="main.c"><code>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+struct Node {
+    int val;
+    struct Node *next;
+};
+
+static struct Node *new_node(int val) {
+    struct Node *node = malloc(sizeof *node);
+    if (node == NULL) {
+        exit(1);
+    }
+    node-&gt;val = val;
+    node-&gt;next = NULL;
+    return node;
+}
+
+static struct Node *push_back(struct Node *head, int val) {
+    struct Node *node = new_node(val);
+    if (head == NULL) {
+        return node;
+    }
+    struct Node *p = head;
+    while (p-&gt;next != NULL) {
+        p = p-&gt;next;
+    }
+    p-&gt;next = node;
+    return head;
+}
+
+static struct Node *remove_all(struct Node *head, int x) {
+    while (head != NULL &amp;&amp; head-&gt;val == x) {
+        struct Node *old = head;
+        head = head-&gt;next;
+        free(old);
+    }
+    for (struct Node *p = head; p != NULL &amp;&amp; p-&gt;next != NULL;) {
+        if (p-&gt;next-&gt;val == x) {
+            struct Node *old = p-&gt;next;
+            p-&gt;next = old-&gt;next;
+            free(old);
+        } else {
+            p = p-&gt;next;
+        }
+    }
+    return head;
+}
+
+static void print_list(const struct Node *p) {
+    if (p == NULL) {
+        printf("empty\n");
+        return;
+    }
+    for (; p != NULL; p = p-&gt;next) {
+        printf("%d%c", p-&gt;val, p-&gt;next != NULL ? ' ' : '\n');
+    }
+}
+
+static void free_list(struct Node *p) {
+    while (p != NULL) {
+        struct Node *next = p-&gt;next;
+        free(p);
+        p = next;
+    }
+}
+
+int main(void) {
+    int n;
+    if (scanf("%d", &amp;n) != 1 || n &lt; 1 || n &gt; 1000) {
+        return 1;
+    }
+    struct Node *head = NULL;
+    for (int i = 0; i &lt; n; i++) {
+        int x;
+        if (scanf("%d", &amp;x) != 1) {
+            free_list(head);
+            return 1;
+        }
+        head = push_back(head, x);
+    }
+    int x;
+    if (scanf("%d", &amp;x) != 1) {
+        free_list(head);
+        return 1;
+    }
+    head = remove_all(head, x);
+    print_list(head);
+    free_list(head);
+    return 0;
+}
+</code></pre></div></div></details>
+  <label class="donebox"><input type="checkbox" data-task="14/list_del" id="done-14-list_del"> Решено: Gemini подтвердил, что решение верное</label>
+</article>
+  </div>
+</section>
 <section class="mod" id="ref">
   <div class="mod-head"><div class="mod-num">СПРАВОЧНИК</div><h2>Справочник</h2>
     <p class="why">Таблицы, к которым возвращаются во время решения задач. Учить их наизусть не нужно: со временем запомнятся сами.</p></div>
@@ -5245,12 +5632,12 @@ clean:
   <div class="mod-head"><div class="mod-num">ПЛАН</div><h2>План занятий</h2>
     <p class="why">Примерно 12 недель по 1–2 часа в день. Темп можно менять, но правило «база решена — иду дальше» менять нельзя.</p></div>
   <div class="prose">
-    <div class="tblwrap"><table class="weeks"><thead><tr><th>Неделя</th><th>Уроки</th><th>Что должно получиться</th></tr></thead><tbody><tr><td>1</td><td>1–2: переменные, условия</td><td>все задачи «база» уроков 1–2</td></tr><tr><td>2</td><td>3: циклы</td><td>задачи урока 3; трассировка циклов на бумаге без ошибок</td></tr><tr><td>3</td><td>4–5: функции, массивы</td><td>задачи «база»; переписать «Размен суммы» с массивом</td></tr><tr><td>4</td><td>6: отладка</td><td>найти и исправить ошибки во всех трёх программах; освоить gdb</td></tr><tr><td>5</td><td>7: указатели</td><td>все задачи урока, включая «средне». Это главная неделя</td></tr><tr><td>6</td><td>8: строки</td><td>палиндромы, шифр Цезаря, подсчёт слов</td></tr><tr><td>7</td><td>9: динамическая память</td><td>растущий массив; ноль утечек под санитайзером</td></tr><tr><td>8</td><td>10: структуры</td><td>телефонная книга</td></tr><tr><td>9</td><td>11: файлы и аргументы</td><td>свои wc и grep</td></tr><tr><td>10</td><td>12: биты</td><td>права доступа, даты FAT, битовое множество</td></tr><tr><td>11–12</td><td>13: финальный проект</td><td>эмулятор процессора «Малыш-8» проходит все тесты</td></tr></tbody></table></div>
+    <div class="tblwrap"><table class="weeks"><thead><tr><th>Неделя</th><th>Уроки</th><th>Что должно получиться</th></tr></thead><tbody><tr><td>1</td><td>1–2: переменные, условия</td><td>все задачи «база» уроков 1–2</td></tr><tr><td>2</td><td>3: циклы</td><td>задачи урока 3; трассировка циклов на бумаге без ошибок</td></tr><tr><td>3</td><td>4–5: функции, массивы</td><td>задачи «база»; переписать «Размен суммы» с массивом</td></tr><tr><td>4</td><td>6: отладка</td><td>найти и исправить ошибки во всех трёх программах; освоить gdb</td></tr><tr><td>5</td><td>7: указатели</td><td>все задачи урока, включая «средне». Это главная неделя</td></tr><tr><td>6</td><td>8: строки</td><td>палиндромы, шифр Цезаря, подсчёт слов</td></tr><tr><td>7</td><td>9: динамическая память</td><td>растущий массив; ноль утечек под санитайзером</td></tr><tr><td>8</td><td>10: структуры</td><td>телефонная книга</td></tr><tr><td>9</td><td>11: файлы и аргументы</td><td>свои wc и grep</td></tr><tr><td>10</td><td>12: биты</td><td>права доступа, даты FAT, битовое множество</td></tr><tr><td>11–12</td><td>13: финальный проект</td><td>эмулятор процессора «Малыш-8» проходит все тесты</td></tr><tr><td>13</td><td>14: связные списки</td><td>три задачи урока; ноль утечек под санитайзером</td></tr></tbody></table></div>
     <p>После финального проекта база закрыта. Дальше выбирается направление (embedded, системное программирование под Linux или безопасность), и к курсу добавляется вторая часть под него.</p>
   </div>
 </section>
 
-<footer>Каждое решение в курсе проверено: оно компилируется gcc с <code>-Werror</code> и санитайзерами и проходит все 346 тестов. Ответы в «Предскажи вывод» получены запуском кода, а не написаны вручную. Отметки «Решено» и размер шрифта хранятся только в этом браузере.</footer>
+<footer>Каждое решение в курсе проверено: оно компилируется gcc с <code>-Werror</code> и санитайзерами и проходит все 346 тестов. Ответы в «Предскажи вывод» получены запуском кода, а не написаны вручную. Решения урока 14 проверены компиляцией и запуском на примерах; автотестов у них нет, их проверяет Gemini. Отметки «Решено» и размер шрифта хранятся только в этом браузере.</footer>
 </main>
 </div>
 <script>
@@ -5420,6 +5807,86 @@ clean:
     }, { rootMargin: "-20% 0px -70% 0px" });
     document.querySelectorAll("section.mod").forEach(function (s) { io.observe(s); });
   }
+
+  /* ---------- v3: continue button, lesson footers, search, reset ---------- */
+  var resume = document.getElementById("resume"), note = document.getElementById("resume-note");
+  function updateResume() {
+    var first = null;
+    boxes.forEach(function (b) { if (!first && !b.checked) first = b; });
+    if (!first) { resume.textContent = "Курс пройден"; resume.setAttribute("href", "#plan"); note.textContent = "Все " + total + " задач решены."; return; }
+    var art = first.closest(".task"), any = Object.keys(done).length > 0;
+    resume.textContent = any ? "Продолжить с задачи " + art.querySelector(".task-num").textContent : "Начать урок 1";
+    resume.setAttribute("href", any ? "#" + art.id : "#l1");
+    note.textContent = any ? art.querySelector(".task-title").textContent : "Прочитай «Как учиться», настрой окружение и начинай.";
+  }
+
+  var lessons = Array.prototype.filter.call(document.querySelectorAll("section.mod"), function (s) { return /^l\d+$/.test(s.id); });
+  var navs = lessons.map(function (s, i) {
+    var nav = document.createElement("nav"), st = document.createElement("span"), a = document.createElement("a"), nx = lessons[i + 1];
+    nav.className = "lesson-next";
+    nav.setAttribute("aria-label", "Переход к следующему разделу");
+    if (nx) { a.href = "#" + nx.id; a.textContent = "Урок " + (i + 2) + ": " + nx.querySelector("h2").textContent + " →"; }
+    else { a.href = "#ref"; a.textContent = "К справочнику →"; }
+    nav.appendChild(st); nav.appendChild(a); s.appendChild(nav);
+    return st;
+  });
+  function updateNext() {
+    navs.forEach(function (st, i) {
+      var num = ("0" + (i + 1)).slice(-2), k = 0, tt = 0;
+      boxes.forEach(function (b) { if (b.getAttribute("data-task").split("/")[0] === num) { tt++; if (b.checked) k++; } });
+      st.innerHTML = "Урок " + (i + 1) + ": решено <b>" + k + " из " + tt + "</b>. " + (k === tt ? "Можно идти дальше." : "Перед следующим уроком реши задачи уровня «база».");
+    });
+  }
+  function refresh() { updateResume(); updateNext(); }
+  boxes.forEach(function (b) { b.addEventListener("change", refresh); });
+  refresh();
+
+  var qEl = document.getElementById("q"), qRes = document.getElementById("qres"), index = [];
+  document.querySelectorAll("section.mod").forEach(function (s) {
+    var h2 = s.querySelector("h2"); if (!h2) return;
+    index.push({ t: h2.textContent, w: "", x: "", el: s });
+    s.querySelectorAll("h3, .task-title").forEach(function (h) {
+      var task = h.closest(".task"), p = task && task.querySelector(".task-path code");
+      index.push({ t: h.textContent, w: h2.textContent, x: p ? p.textContent : "", el: task || h });
+    });
+  });
+  function norm(s) { return s.toLowerCase().replace(/ё/g, "е"); }
+  function runSearch() {
+    var q = norm(qEl.value.trim());
+    qRes.innerHTML = "";
+    if (q.length < 2) { qRes.classList.remove("open"); return; }
+    var hits = index.filter(function (e) { return norm(e.t + " " + e.x).indexOf(q) !== -1; }).slice(0, 12);
+    if (!hits.length) { var em = document.createElement("li"); em.className = "search-empty"; em.textContent = "Ничего не найдено"; qRes.appendChild(em); }
+    hits.forEach(function (e) {
+      var li = document.createElement("li"), b = document.createElement("button");
+      b.type = "button"; b.textContent = e.t;
+      if (e.w) { var sm = document.createElement("small"); sm.textContent = e.w; b.appendChild(sm); }
+      b.addEventListener("click", function () {
+        e.el.scrollIntoView({ block: "start" });
+        qEl.value = ""; qRes.classList.remove("open");
+        if (!wide.matches) toc.open = false;
+      });
+      li.appendChild(b); qRes.appendChild(li);
+    });
+    qRes.classList.add("open");
+  }
+  qEl.addEventListener("input", runSearch);
+  qEl.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") { qEl.value = ""; runSearch(); qEl.blur(); }
+    if (e.key === "Enter") { var f = qRes.querySelector("button"); if (f) f.click(); }
+  });
+  document.addEventListener("keydown", function (e) {
+    var tag = (document.activeElement || {}).tagName;
+    if (e.key === "/" && tag !== "INPUT" && tag !== "TEXTAREA") { e.preventDefault(); if (!wide.matches) toc.open = true; qEl.focus(); }
+  });
+
+  var rst = document.getElementById("reset"), rstT = null;
+  function disarm() { rst.classList.remove("arm"); rst.textContent = "Сбросить прогресс"; }
+  rst.addEventListener("click", function () {
+    if (!rst.classList.contains("arm")) { rst.classList.add("arm"); rst.textContent = "Точно сбросить?"; rstT = setTimeout(disarm, 3000); return; }
+    clearTimeout(rstT); disarm();
+    done = {}; save(KEY, done); render(); refresh();
+  });
 })();
 </script>
 </body></html>
